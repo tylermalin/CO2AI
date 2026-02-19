@@ -27,6 +27,8 @@ export default function ResearchPage() {
   const [whPerThousand, setWhPerThousand] = useState(0.45);
   const [carbonIntensity, setCarbonIntensity] = useState(0.4);
   const [routingReduction, setRoutingReduction] = useState(0);
+  const [monteCarloResult, setMonteCarloResult] = useState(null);
+  const [monteCarloLoading, setMonteCarloLoading] = useState(false);
 
   const result = calculateEmissions({
     companies: totalCompanies,
@@ -78,6 +80,28 @@ export default function ResearchPage() {
       document.title = 'Mālama AI Carbon – Make AI measurable. Make AI accountable.';
     };
   }, []);
+
+  const runMonteCarlo = async () => {
+    setMonteCarloLoading(true);
+    setMonteCarloResult(null);
+    try {
+      const params = new URLSearchParams({
+        companies: String(totalCompanies),
+        tokens_per_company: String(tokensPerCompany),
+        wh_per_1k: String(whPerThousand),
+        carbon_intensity: String(carbonIntensity),
+        iterations: '10000',
+      });
+      const res = await fetch(`/api/research/monte-carlo?${params}`);
+      if (!res.ok) throw new Error('Simulation failed');
+      const data = await res.json();
+      setMonteCarloResult(data);
+    } catch (err) {
+      setMonteCarloResult({ error: err.message });
+    } finally {
+      setMonteCarloLoading(false);
+    }
+  };
 
   const industryResults = industries.map((ind) => {
     const r = calculateEmissions({
@@ -143,6 +167,43 @@ export default function ResearchPage() {
             Results
           </h2>
           <EmissionsResults result={result} optimizedCo2Kg={optimizedCo2Kg} />
+        </section>
+
+        <section className="research-section">
+          <h2 className="text-xl font-medium text-[var(--color-text)] mb-4">
+            Monte Carlo Simulation
+          </h2>
+          <button
+            type="button"
+            onClick={runMonteCarlo}
+            disabled={monteCarloLoading}
+            className="px-4 py-2 text-sm border border-[var(--color-border)] rounded text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-text-muted)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {monteCarloLoading ? 'Running…' : 'Run Monte Carlo Simulation'}
+          </button>
+          {monteCarloResult?.error && (
+            <p className="mt-4 text-sm text-[var(--color-danger)]">{monteCarloResult.error}</p>
+          )}
+          {monteCarloResult && !monteCarloResult.error && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
+              <div className="p-4 border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)]">
+                <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">Mean</p>
+                <p className="text-lg font-semibold text-[var(--color-text)] mt-1">{monteCarloResult.mean.toFixed(1)} t</p>
+              </div>
+              <div className="p-4 border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)]">
+                <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">Median (P50)</p>
+                <p className="text-lg font-semibold text-[var(--color-text)] mt-1">{monteCarloResult.median.toFixed(1)} t</p>
+              </div>
+              <div className="p-4 border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)]">
+                <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">P10</p>
+                <p className="text-lg font-semibold text-[var(--color-text)] mt-1">{monteCarloResult.p10.toFixed(1)} t</p>
+              </div>
+              <div className="p-4 border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)]">
+                <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">P90</p>
+                <p className="text-lg font-semibold text-[var(--color-text)] mt-1">{monteCarloResult.p90.toFixed(1)} t</p>
+              </div>
+            </div>
+          )}
         </section>
 
         <section className="research-section">
