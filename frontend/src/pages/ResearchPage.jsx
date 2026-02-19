@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { calculateEmissions, calculateRange } from '../utils/carbonModel';
 import { AreaChart, Area, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
@@ -56,6 +56,29 @@ export default function ResearchPage() {
     bandTons: highMonthly - lowMonthly,
   }));
 
+  useEffect(() => {
+    const title = 'AI Carbon Outlook 2026 | Mālama AI Carbon Research';
+    const description = 'Scenario-based modeling of AI inference emissions across industries. Policy brief with uncertainty bands, methodology, and citations.';
+    document.title = title;
+    const setMeta = (attr, key, val) => {
+      let el = document.querySelector(`meta[${attr}="${key}"]`);
+      if (!el) {
+        el = document.createElement('meta');
+        el.setAttribute(attr, key);
+        document.head.appendChild(el);
+      }
+      el.setAttribute('content', val);
+    };
+    setMeta('name', 'description', description);
+    setMeta('property', 'og:title', title);
+    setMeta('property', 'og:description', description);
+    setMeta('property', 'og:type', 'article');
+    setMeta('name', 'robots', 'index, follow');
+    return () => {
+      document.title = 'Mālama AI Carbon – Make AI measurable. Make AI accountable.';
+    };
+  }, []);
+
   const industryResults = industries.map((ind) => {
     const r = calculateEmissions({
       companies: ind.companies,
@@ -67,7 +90,7 @@ export default function ResearchPage() {
   });
 
   return (
-    <div className="min-h-screen bg-[#0b0f14] text-[var(--color-text)]">
+    <article className="min-h-screen bg-[#0b0f14] text-[var(--color-text)]">
       <nav className="sticky top-0 z-10 border-b border-[var(--color-border)] bg-[#0b0f14]/95 backdrop-blur">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link to="/" className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)]">
@@ -127,7 +150,8 @@ export default function ResearchPage() {
             Uncertainty Range
           </h2>
           <p className="text-sm text-[var(--color-text-muted)] mb-4">
-            Shaded region represents modeled uncertainty range (±20–30% parameter sensitivity).
+            Shaded region represents modeled uncertainty range (±20–30% parameter sensitivity)
+            (Patterson et al., 2021)<sup><a href="#ref-3" className="text-[var(--color-accent)] no-underline" aria-label="Reference 3">[3]</a></sup>.
           </p>
           <div className="h-48">
             <ResponsiveContainer width="100%" height="100%">
@@ -162,6 +186,6 @@ export default function ResearchPage() {
         </div>
         <ReferencesSection />
       </main>
-    </div>
+    </article>
   );
 }
