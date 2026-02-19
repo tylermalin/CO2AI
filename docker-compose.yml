@@ -1,0 +1,28 @@
+services:
+  backend:
+    build: ./backend
+    ports: ["8000:8000"]
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://carbon:${DB_PASSWORD:-carbon}@db:5432/carbon_control
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: carbon
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-carbon}
+      POSTGRES_DB: carbon_control
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports: ["5432:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U carbon -d carbon_control"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:
