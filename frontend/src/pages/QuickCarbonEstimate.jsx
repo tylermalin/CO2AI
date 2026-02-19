@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { isAuthenticated } from '../utils/auth';
 import axios from 'axios';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api/v1';
@@ -8,6 +9,7 @@ const API_BASE = import.meta.env.VITE_API_URL || '/api/v1';
 const api = axios.create({ baseURL: API_BASE });
 
 function QuickCarbonEstimate() {
+  const navigate = useNavigate();
   const [monthlySpend, setMonthlySpend] = useState('');
   const [pctGpt4, setPctGpt4] = useState(50);
   const [pctGpt35, setPctGpt35] = useState(50);
@@ -198,12 +200,19 @@ function QuickCarbonEstimate() {
               <p className="text-[var(--color-text-muted)] text-sm mb-4">
                 This is an estimate. Connect your API for precise tracking.
               </p>
-              <Link
-                to="/dashboard"
+              <button
+                type="button"
+                onClick={() => {
+                  if (!isAuthenticated()) {
+                    navigate('/signup');
+                  } else {
+                    navigate('/onboarding/connect-provider');
+                  }
+                }}
                 className="inline-block py-3 px-6 bg-[var(--color-accent)] text-[var(--color-bg)] font-medium rounded-lg hover:opacity-90 transition-opacity"
               >
                 Connect API for precise tracking
-              </Link>
+              </button>
             </div>
           </div>
         )}
