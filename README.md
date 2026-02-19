@@ -1,145 +1,238 @@
-# AIC02 — AI Carbon Control Plane
+# CO2AI
 
-Phase 1 backend scaffold. FastAPI + Postgres + Docker.
+**Carbon Accounting & Governance for AI Inference**
 
-## Prerequisites: Docker
+AI is scaling rapidly. Its operational carbon footprint is largely invisible.
 
-### Ubuntu / Debian
+CO2AI is an open, research-driven framework for estimating, tracking, and governing the energy use and associated CO₂ emissions of large language model (LLM) inference workloads.
 
-```bash
-# Add Docker's official GPG key
-sudo apt update
-sudo apt install ca-certificates curl
-sudo install -m 0755 -d /etc/apt/keyrings
-sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-sudo chmod a+r /etc/apt/keyrings/docker.asc
+Developed by Mālama Labs, CO2AI applies digital MRV (Measurement, Reporting, and Verification) principles to AI infrastructure.
 
-# Add the repository to Apt sources
-sudo tee /etc/apt/sources.list.d/docker.sources <<EOF
-Types: deb
-URIs: https://download.docker.com/linux/ubuntu
-Suites: $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
-Components: stable
-Signed-By: /etc/apt/keyrings/docker.asc
-EOF
+---
 
-sudo apt update
-sudo apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+## Why CO2AI?
+
+As AI inference becomes embedded in applications, workflows, and infrastructure:
+
+- Engineering teams track tokens and cost.
+- Sustainability teams track electricity procurement.
+- Few organizations track inference emissions per request.
+
+CO2AI bridges that gap by attaching carbon intelligence directly to AI operations.
+
+---
+
+## What It Does
+
+CO2AI provides:
+
+- Per-request energy and CO₂ estimation
+- Organization-level emissions tracking
+- Carbon budget enforcement
+- Carbon-aware inference routing
+- Optimization insights
+- Research-backed probabilistic modeling
+- Industry-level carbon outlook modeling
+
+All built using transparent assumptions and documented methodology.
+
+---
+
+## Architecture Overview
+
+```
+Client Application
+        ↓
+CO2AI Proxy (OpenAI-compatible)
+        ↓
+Upstream LLM Provider
 ```
 
-### macOS
+At each inference call, CO2AI:
 
-**Option A — Docker Desktop (recommended)**
+1. Estimates FLOPs based on token usage.
+2. Converts compute to energy using hardware efficiency assumptions.
+3. Applies data center overhead (PUE).
+4. Applies grid carbon intensity (location-based or marginal).
+5. Logs results.
+6. Optionally enforces carbon budgets.
+7. Optionally routes to lower-carbon regions.
 
-1. Download from [Docker Desktop for Mac](https://docs.docker.com/desktop/install/mac-install/)
-2. Open the `.dmg`, drag Docker to Applications
-3. Launch Docker Desktop and wait for it to finish starting
-4. Verify: `docker --version` and `docker compose version`
+---
 
-**Option B — Homebrew**
+## Research Basis
+
+CO2AI builds on established work in machine learning energy reporting and software carbon accounting:
+
+- Henderson et al., 2020 – Systematic reporting of ML energy and carbon footprints (JMLR)
+- Strubell et al., 2019 – Energy considerations for NLP
+- Patterson et al., 2021 – Carbon emissions in large neural network systems
+- Green Software Foundation – Software Carbon Intensity (SCI) Specification
+- GHG Protocol – Scope 2 accounting guidance
+
+The goal is not perfect measurement, but transparent, defensible estimation.
+
+---
+
+## Core Features
+
+### 1. Carbon Estimation Engine
+
+- FLOPs-based modeling
+- Hardware efficiency calibration
+- Data center PUE adjustments
+- Configurable carbon intensity
+- Uncertainty modeling (Monte Carlo simulation)
+
+### 2. Carbon Budgets
+
+Organizations can:
+
+- Set monthly CO₂ limits
+- Enable monitoring mode
+- Enable soft warnings
+- Enable hard enforcement
+
+Carbon becomes a governed operational metric.
+
+### 3. Carbon-Aware Routing
+
+CO2AI can evaluate:
+
+- Real-time grid carbon intensity
+- Model energy characteristics
+- Regional differences
+
+Then route inference to lower-carbon regions where available.
+
+### 4. AI Carbon Outlook 2026
+
+Interactive industry-level carbon modeling with:
+
+- Adjustable usage assumptions
+- Uncertainty bands
+- Monte Carlo simulation
+- Policy brief PDF export
+
+---
+
+## Installation
+
+### Backend
 
 ```bash
-brew install --cask docker
+git clone https://github.com/tylermalin/CO2AI.git
+cd CO2AI/backend
+pip install -r requirements.txt
+uvicorn app.main:app --reload
 ```
 
-Then launch Docker Desktop from Applications and wait for it to start.
+### Frontend
 
-## Setup
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-1. Copy `.env.example` to `.env` and adjust.
-2. Run with Docker Compose:
+### Docker (Recommended)
 
 ```bash
 docker compose up --build
 ```
 
-Backend: http://localhost:8000  
-Health: http://localhost:8000/api/v1/health
+---
 
-## Proxy (Phase 3)
+## Configuration
 
-OpenAI-compatible `/v1/chat/completions` proxy with carbon estimate. Rebuild after code changes: `docker compose up --build`. Set `OPENAI_API_KEY` in `.env`, then:
+Set environment variables:
 
-```bash
-curl -X POST http://localhost:8000/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{"model":"gpt-4o-mini","messages":[{"role":"user","content":"Say hi"}]}'
+```
+DATABASE_URL=
+OPENAI_API_KEY=
+ELECTRICITYMAP_API_KEY=
+DEFAULT_PUE=1.3
+DEFAULT_CARBON_INTENSITY=0.4
 ```
 
-Response includes `carbon_estimate_kg_co2eq`.
+---
 
-## Emissions Ledger (Phase 4)
+## Monte Carlo Modeling
 
-Proxy requests are persisted to `emission_records` with optional `X-Organization-Id` header for multi-tenant scoping. Tables are created on startup via `init_db()`.
+CO2AI includes probabilistic modeling to account for uncertainty in:
 
-**Dev migration:** Run `python scripts/init_db.py` from project root to create tables without starting the app.
+- Token usage
+- Hardware energy intensity
+- Carbon intensity
 
-**Aggregation API** (optional `X-Organization-Id` header):
+The system produces:
 
-```bash
-# Monthly total
-curl http://localhost:8000/api/v1/emissions/monthly
+- Mean estimate
+- Median estimate
+- P10
+- P90
+- Distribution samples
 
-# Daily totals (last 30 days)
-curl http://localhost:8000/api/v1/emissions/daily?days=30
+This enables confidence interval reporting rather than single-point claims.
 
-# Last 100 requests
-curl http://localhost:8000/api/v1/emissions/recent?limit=100
-```
+---
 
-**Tests:** `docker compose run --rm -e OPENAI_API_KEY= backend python -m pytest tests/ -v`
+## Methodological Limitations
 
-## Carbon Budgets (Phase 5)
+CO2AI does not claim:
 
-Org-level monthly carbon limits with alert threshold and optional hard block. Proxy checks projected total before committing; rejects with 402 if exceeded (when `hard_block`), or attaches `carbon_budget_warning` when alert threshold crossed.
+- Direct measurement of provider hardware telemetry
+- Embodied carbon accounting
+- Market-based renewable attribution without documentation
+- Exact per-request ground-truth emissions
 
-**Create budget** (creates org if needed):
+All results are model-based estimates with documented assumptions.
 
-```bash
-ORG_ID=$(uuidgen)
-curl -X POST http://localhost:8000/api/v1/carbon-budgets \
-  -H "Content-Type: application/json" \
-  -H "X-Organization-Id: $ORG_ID" \
-  -d '{"monthly_limit_kg_co2eq": 0.0001, "alert_threshold_pct": 80, "enforcement_enabled": true, "hard_block": false}'
-```
+---
 
-**Manual test enforcement:**
+## Roadmap
 
-1. Create budget with a tiny limit (e.g. `0.00001`) and `hard_block: true`
-2. Call proxy with `X-Organization-Id: $ORG_ID` — should get 402 after first request
-3. Create budget with `hard_block: false` and `alert_threshold_pct: 1` — requests succeed but response includes `carbon_budget_warning`
-4. Omit `X-Organization-Id` — no budget check, requests always allowed
+- Region-specific carbon intensity modeling
+- Sensitivity analysis (tornado diagrams)
+- ESG-ready reporting exports
+- Multi-tenant enterprise governance
+- Cryptographically signed emission logs
+- Open benchmarking alignment with MLPerf Power
 
-## Real-Time Carbon API (Phase 6)
+---
 
-Electricity Maps integration for region-specific carbon intensity. In-memory 5-minute cache, fallback to default when API unavailable.
+## Contributing
 
-**Setup:** Set `ELECTRICITYMAP_API_KEY` in `.env`. Optional `ELECTRICITYMAP_DEFAULT_ZONE` (default: US-CAL-CISO).
+CO2AI is research-driven and open to collaboration.
 
-**Region header:** Pass `X-Region` with Electricity Maps zone (e.g. `US-CAL-CISO`, `US-NY-NYIS`):
+If you are working on:
 
-```bash
-curl -X POST http://localhost:8000/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -H "X-Region: US-CAL-CISO" \
-  -d '{"model":"gpt-4o-mini","messages":[{"role":"user","content":"Hi"}]}'
-```
+- Green software standards
+- AI energy benchmarking
+- Carbon accounting frameworks
+- Grid-intensity APIs
+- Climate policy
 
-Without `X-Region`, uses default zone from config.
+We welcome issues and pull requests.
 
-## Carbon-Aware Routing (Phase 7)
+---
 
-Routing engine selects upstream region by mode before forwarding. Estimates emissions per region (from Electricity Maps), picks lowest-carbon in optimize mode.
+## Related Work
 
-**Modes** (header `X-Routing-Mode`):
-- `standard` — use `X-Region` or first configured region
-- `optimize` — estimate carbon per region, forward to lowest
-- `latency_priority` — use first region immediately (no carbon lookup during routing)
+**Mālama Labs**  
+Digital MRV systems for climate-aligned infrastructure.
 
-**Multi-region config** (env `UPSTREAM_REGIONS`, JSON):
+**AI Carbon Outlook 2026**  
+Scenario-based modeling of AI inference emissions.
 
-```bash
-UPSTREAM_REGIONS='[{"zone":"US-CAL-CISO","base_url":"https://api.openai.com/v1"},{"zone":"FR","base_url":"https://api.openai.com/v1"}]'
-```
+---
 
-**Response metadata:** `routing.region`, `routing.mode`, `routing.reason`, `routing.region_estimates` (optimize mode). Routing decision is logged to `emission_records`.
+## License
+
+MIT License
+
+---
+
+## Disclaimer
+
+CO2AI provides modeled carbon estimates based on transparent assumptions and publicly available efficiency benchmarks. It is not a certified emissions auditing system. Organizations should validate assumptions against their operational context.

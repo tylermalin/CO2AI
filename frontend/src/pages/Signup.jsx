@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import { Magic } from 'magic-sdk';
 
-const API_BASE = import.meta.env.VITE_API_URL || '/api/v1';
-const api = axios.create({ baseURL: API_BASE });
+const MAGIC_KEY = import.meta.env.VITE_MAGIC_PUBLISHABLE_KEY;
 
 export default function Signup() {
   const [email, setEmail] = useState('');
@@ -20,12 +19,22 @@ export default function Signup() {
       setError('Enter your email');
       return;
     }
+    if (!MAGIC_KEY) {
+      setError('Magic is not configured. Set VITE_MAGIC_PUBLISHABLE_KEY.');
+      return;
+    }
     setLoading(true);
     try {
-      await api.post('/auth/magic-link', { email: trimmed });
+      const magic = new Magic(MAGIC_KEY);
+      const redirectURI = `${window.location.origin}/auth/verify`;
+      await magic.auth.loginWithMagicLink({
+        email: trimmed,
+        redirectURI,
+        showUI: false,
+      });
       setSent(true);
     } catch (err) {
-      setError(err.response?.data?.detail || err.message || 'Failed to send magic link');
+      setError(err.message || 'Failed to send magic link');
     } finally {
       setLoading(false);
     }

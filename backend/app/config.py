@@ -43,6 +43,7 @@ class Settings(BaseSettings):
 
     # Security (override in production)
     jwt_secret: str = "change-me-in-production"
+    magic_secret_key: str | None = None  # Magic Labs secret key (sk_live_...) for DID token verification
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 60
 

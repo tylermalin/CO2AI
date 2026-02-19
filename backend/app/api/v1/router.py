@@ -2,10 +2,11 @@
 
 from fastapi import APIRouter
 
-from app.api.v1 import carbon_budgets, emissions, health, optimization_insights, quick_estimate
+from app.api.v1 import auth, carbon_budgets, emissions, health, optimization_insights, quick_estimate
 
 router = APIRouter(prefix="/api/v1", tags=["v1"])
 router.include_router(health.router, tags=["health"])
+router.include_router(auth.router)
 router.include_router(emissions.router)
 router.include_router(carbon_budgets.router)
 router.include_router(optimization_insights.router)
