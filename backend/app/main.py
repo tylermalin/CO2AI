@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 
 import structlog
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -44,6 +45,19 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title=settings.app_name,
         lifespan=lifespan,
+    )
+
+    # CORS (allow_credentials must be False when origins is ["*"])
+    origins = [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
+    allow_all = "*" in origins
+    if allow_all:
+        origins = ["*"]
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins,
+        allow_credentials=not allow_all,
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
 
     # Middleware (order: first added = outermost)

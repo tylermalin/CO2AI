@@ -3,8 +3,32 @@
 import json
 from functools import lru_cache
 from typing import Any
+from urllib.parse import quote, unquote
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def _encode_postgres_url_password(url: str) -> str:
+    """
+    URL-encode the password in a postgres URL. Railway passwords often contain
+    @, #, :, / which break URL parsing. Split on last @ (credentials@host).
+    """
+    for prefix in ("postgresql://", "postgresql+asyncpg://", "postgres://"):
+        if url.startswith(prefix):
+            rest = url[len(prefix) :]
+            if "@" not in rest:
+                return url
+            # Last @ separates user:password from host:port/db
+            last_at = rest.rfind("@")
+            creds, host = rest[:last_at], rest[last_at + 1 :]
+            if ":" in creds:
+                user, _, password = creds.partition(":")
+                if password != unquote(password):
+                    return url  # Already encoded
+                password_encoded = quote(password, safe="")
+                creds = f"{user}:{password_encoded}"
+            return f"{prefix}{creds}@{host}"
+    return url
 
 
 def _parse_upstream_regions(v: str | None) -> list[dict[str, str]]:
@@ -24,6 +48,32 @@ def _parse_upstream_regions(v: str | None) -> list[dict[str, str]]:
         return []
 
 
+def _normalize_database_url(url: str) -> str:
+    """Ensure DATABASE_URL uses postgresql+asyncpg for SQLAlchemy async."""
+    if not url or not url.strip():
+        raise ValueError(
+            "DATABASE_URL is empty. On Railway: Variables → Add Reference → "
+            "select your Postgres service → choose DATABASE_URL or DATABASE_PUBLIC_URL"
+        )
+    url = url.strip()
+    # Reject unresolved Railway variable references
+    if url.startswith("${{") or "{{" in url:
+        raise ValueError(
+            "DATABASE_URL looks like an unresolved reference. "
+            "Ensure the Postgres service is linked: Variables → Add Reference → Postgres → DATABASE_URL"
+        )
+    if url.startswith("postgres://"):
+        url = "postgresql+asyncpg://" + url[len("postgres://") :]
+    elif url.startswith("postgresql://") and "+asyncpg" not in url:
+        url = "postgresql+asyncpg://" + url[len("postgresql://") :]
+    elif not url.startswith("postgresql"):
+        raise ValueError(
+            f"DATABASE_URL must start with postgres:// or postgresql://, got: {url[:50]}..."
+        )
+    # Encode password - Railway passwords with @, #, :, / break SQLAlchemy parsing
+    return _encode_postgres_url_password(url)
+
+
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
@@ -38,8 +88,17 @@ class Settings(BaseSettings):
     app_name: str = "AI Carbon Control Plane"
     debug: bool = False
 
-    # Database
+    # Database (Railway Postgres exposes DATABASE_URL or DATABASE_PUBLIC_URL)
     database_url: str = "postgresql+asyncpg://carbon:carbon@localhost:5432/carbon_control"
+    database_public_url: str | None = None  # Railway fallback
+
+    @property
+    def database_url_normalized(self) -> str:
+        url = self.database_url
+        # Use DATABASE_PUBLIC_URL if DATABASE_URL is localhost (Railway fallback)
+        if self.database_public_url and ("localhost" in url or "127.0.0.1" in url):
+            url = self.database_public_url
+        return _normalize_database_url(url)
 
     # Security (override in production)
     jwt_secret: str = "change-me-in-production"
@@ -64,6 +123,9 @@ class Settings(BaseSettings):
 
     # Read-only DB URL for read replicas (optional). When set, read endpoints use it.
     database_readonly_url: str | None = None
+
+    # CORS: comma-separated origins, or "*" for all. Set in production to your frontend URL(s).
+    cors_origins: str = "*"
 
     def get_regions(self) -> list[dict[str, str]]:
         """Parsed upstream regions. Default: single region from openai_base_url."""

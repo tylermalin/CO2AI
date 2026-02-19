@@ -1,0 +1,4 @@
+# Use when Railway Root Directory is repo root (or unset)
+[build]
+builder = "dockerfile"
+dockerfilePath = "Dockerfile.backend"

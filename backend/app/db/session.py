@@ -12,8 +12,8 @@ from app.db.base import Base
 
 
 def get_database_url() -> str:
-    """Build database URL from settings."""
-    return get_settings().database_url
+    """Build database URL from settings (normalized for asyncpg)."""
+    return get_settings().database_url_normalized
 
 
 def get_readonly_url() -> str | None:
@@ -31,7 +31,26 @@ def _make_engine(url: str) -> AsyncEngine:
     )
 
 
-engine = _make_engine(get_database_url())
+def _create_engine_safe() -> AsyncEngine:
+    """Create engine with helpful error on invalid DATABASE_URL."""
+    try:
+        url = get_database_url()
+        return _make_engine(url)
+    except ValueError as e:
+        raise RuntimeError(
+            f"Invalid DATABASE_URL: {e}. "
+            "On Railway: Variables → Add Reference → Postgres → DATABASE_URL"
+        ) from e
+    except Exception as e:
+        if "Could not parse" in str(e):
+            raise RuntimeError(
+                "DATABASE_URL could not be parsed. Add it as a Reference: Variables → "
+                "Add Reference → select your Postgres database → DATABASE_URL"
+            ) from e
+        raise
+
+
+engine = _create_engine_safe()
 
 # Read-only engine for read replicas (optional)
 _readonly_engine: AsyncEngine | None = None
