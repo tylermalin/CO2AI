@@ -9,6 +9,7 @@ import EmissionsResults from '../components/research/EmissionsResults';
 import IndustryBreakdownChart from '../components/research/IndustryBreakdownChart';
 import OptimizationImpactChart from '../components/research/OptimizationImpactChart';
 import LimitationsSection from '../components/research/LimitationsSection';
+import ProbabilisticModelingSection from '../components/research/ProbabilisticModelingSection';
 import ReferencesSection from '../components/research/ReferencesSection';
 
 const industries = [
@@ -168,6 +169,8 @@ export default function ResearchPage() {
           </h2>
           <EmissionsResults result={result} optimizedCo2Kg={optimizedCo2Kg} />
         </section>
+
+        <ProbabilisticModelingSection />
 
         <section className="research-section">
           <h2 className="text-xl font-medium text-[var(--color-text)] mb-4">
