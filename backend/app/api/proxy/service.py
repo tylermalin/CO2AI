@@ -1,17 +1,23 @@
-"""OpenAI proxy service - forward requests, estimate carbon."""
+"""OpenAI proxy service - forward requests, estimate carbon, log emissions."""
+
+import uuid
 
 import httpx
 from fastapi import HTTPException
 from fastapi.responses import StreamingResponse
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
 from app.estimation import estimate_carbon
 from app.api.proxy.models import get_active_params
+from app.services.emission_ledger import log_emission
 
 
 async def forward_chat_completion(
     body: dict,
     stream: bool = False,
+    db: AsyncSession | None = None,
+    organization_id: uuid.UUID | None = None,
 ) -> dict | StreamingResponse:
     """Forward to OpenAI, extract usage, add carbon_estimate. Async."""
     settings = get_settings()
@@ -39,6 +45,19 @@ async def forward_chat_completion(
     data = response.json()
     carbon_estimate = _compute_carbon(data, body.get("model"))
     data["carbon_estimate_kg_co2eq"] = round(carbon_estimate, 10)
+
+    # Persist emission record for ledger
+    if db is not None:
+        usage = data.get("usage") or {}
+        await log_emission(
+            db,
+            organization_id=organization_id,
+            model=body.get("model") or "unknown",
+            input_tokens=usage.get("prompt_tokens", 0),
+            output_tokens=usage.get("completion_tokens", 0),
+            carbon_kg_co2eq=carbon_estimate,
+        )
+
     return data
 
 

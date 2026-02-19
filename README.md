@@ -67,3 +67,24 @@ curl -X POST http://localhost:8000/v1/chat/completions \
 ```
 
 Response includes `carbon_estimate_kg_co2eq`.
+
+## Emissions Ledger (Phase 4)
+
+Proxy requests are persisted to `emission_records` with optional `X-Organization-Id` header for multi-tenant scoping. Tables are created on startup via `init_db()`.
+
+**Dev migration:** Run `python scripts/init_db.py` from project root to create tables without starting the app.
+
+**Aggregation API** (optional `X-Organization-Id` header):
+
+```bash
+# Monthly total
+curl http://localhost:8000/api/v1/emissions/monthly
+
+# Daily totals (last 30 days)
+curl http://localhost:8000/api/v1/emissions/daily?days=30
+
+# Last 100 requests
+curl http://localhost:8000/api/v1/emissions/recent?limit=100
+```
+
+**Tests:** `docker compose run --rm -e OPENAI_API_KEY= backend python -m pytest tests/ -v`

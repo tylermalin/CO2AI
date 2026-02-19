@@ -26,20 +26,31 @@ def anyio_backend() -> str:
 
 
 @pytest.mark.anyio
-async def test_proxy_returns_503_without_api_key() -> None:
+async def test_proxy_returns_503_without_api_key(app_with_mock_db) -> None:
     """Proxy returns 503 when OPENAI_API_KEY not configured."""
-    transport = httpx.ASGITransport(app=app)
-    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
-        response = await client.post(
-            "/v1/chat/completions",
-            json={"model": "gpt-4o-mini", "messages": [{"role": "user", "content": "Hi"}]},
-        )
-    assert response.status_code == 503
+    with patch.dict("os.environ", {"OPENAI_API_KEY": ""}, clear=False):
+        from app.config import get_settings
+        get_settings.cache_clear()
+        try:
+            transport = httpx.ASGITransport(app=app_with_mock_db)
+            async with httpx.AsyncClient(
+                transport=transport, base_url="http://test"
+            ) as client:
+                response = await client.post(
+                    "/v1/chat/completions",
+                    json={
+                        "model": "gpt-4o-mini",
+                        "messages": [{"role": "user", "content": "Hi"}],
+                    },
+                )
+            assert response.status_code == 503
+        finally:
+            get_settings.cache_clear()
 
 
 @respx.mock
 @pytest.mark.anyio
-async def test_proxy_adds_carbon_estimate() -> None:
+async def test_proxy_adds_carbon_estimate(app_with_mock_db) -> None:
     """Proxy forwards request, extracts usage, adds carbon_estimate_kg_co2eq."""
     respx.post("https://api.openai.com/v1/chat/completions").mock(
         return_value=httpx.Response(200, json=OPENAI_MOCK_RESPONSE)
@@ -49,7 +60,7 @@ async def test_proxy_adds_carbon_estimate() -> None:
         from app.config import get_settings
         get_settings.cache_clear()
         try:
-            transport = httpx.ASGITransport(app=app)
+            transport = httpx.ASGITransport(app=app_with_mock_db)
             async with httpx.AsyncClient(
                 transport=transport, base_url="http://test"
             ) as client:

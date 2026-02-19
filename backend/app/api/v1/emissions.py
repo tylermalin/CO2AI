@@ -1,0 +1,58 @@
+"""Emissions ledger API - aggregation queries."""
+
+import uuid
+
+from fastapi import APIRouter, Depends, Header
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.db import get_db
+from app.services.emission_ledger import daily_totals, last_n_requests, monthly_total
+
+router = APIRouter(prefix="/emissions", tags=["emissions"])
+ORG_HEADER = "X-Organization-Id"
+
+
+def _parse_org_id(header_value: str | None) -> uuid.UUID | None:
+    if not header_value or not header_value.strip():
+        return None
+    try:
+        return uuid.UUID(header_value.strip())
+    except (ValueError, TypeError):
+        return None
+
+
+@router.get("/monthly")
+async def get_monthly_total(
+    db: AsyncSession = Depends(get_db),
+    year: int | None = None,
+    month: int | None = None,
+    x_organization_id: str | None = Header(None, alias=ORG_HEADER),
+) -> dict:
+    """Total emissions for a month. Optional year/month; defaults to current month."""
+    org_id = _parse_org_id(x_organization_id)
+    total = await monthly_total(db, organization_id=org_id, year=year, month=month)
+    return {"total_kg_co2eq": float(total)}
+
+
+@router.get("/daily")
+async def get_daily_totals(
+    db: AsyncSession = Depends(get_db),
+    days: int = 30,
+    x_organization_id: str | None = Header(None, alias=ORG_HEADER),
+) -> dict:
+    """Daily emission totals for the last N days."""
+    org_id = _parse_org_id(x_organization_id)
+    totals = await daily_totals(db, organization_id=org_id, days=days)
+    return {"daily_totals": totals}
+
+
+@router.get("/recent")
+async def get_last_requests(
+    db: AsyncSession = Depends(get_db),
+    limit: int = 100,
+    x_organization_id: str | None = Header(None, alias=ORG_HEADER),
+) -> dict:
+    """Last N emission records, most recent first."""
+    org_id = _parse_org_id(x_organization_id)
+    records = await last_n_requests(db, n=min(limit, 500), organization_id=org_id)
+    return {"records": records}
