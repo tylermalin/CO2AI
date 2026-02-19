@@ -5,7 +5,7 @@ import uuid
 from fastapi import APIRouter, Depends, Header
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db import get_db
+from app.db import get_db_readonly
 from app.services.emission_ledger import daily_totals, last_n_requests, monthly_total
 
 router = APIRouter(prefix="/emissions", tags=["emissions"])
@@ -23,7 +23,7 @@ def _parse_org_id(header_value: str | None) -> uuid.UUID | None:
 
 @router.get("/monthly")
 async def get_monthly_total(
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_db_readonly),
     year: int | None = None,
     month: int | None = None,
     x_organization_id: str | None = Header(None, alias=ORG_HEADER),
@@ -36,7 +36,7 @@ async def get_monthly_total(
 
 @router.get("/daily")
 async def get_daily_totals(
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_db_readonly),
     days: int = 30,
     x_organization_id: str | None = Header(None, alias=ORG_HEADER),
 ) -> dict:
@@ -48,11 +48,23 @@ async def get_daily_totals(
 
 @router.get("/recent")
 async def get_last_requests(
-    db: AsyncSession = Depends(get_db),
-    limit: int = 100,
+    db: AsyncSession = Depends(get_db_readonly),
+    limit: int = 50,
+    offset: int = 0,
     x_organization_id: str | None = Header(None, alias=ORG_HEADER),
 ) -> dict:
-    """Last N emission records, most recent first."""
+    """Paginated emission records, most recent first."""
     org_id = _parse_org_id(x_organization_id)
-    records = await last_n_requests(db, n=min(limit, 500), organization_id=org_id)
-    return {"records": records}
+    limit = min(max(1, limit), 100)
+    offset = max(0, offset)
+    records, total = await last_n_requests(
+        db, n=limit, offset=offset, organization_id=org_id
+    )
+    next_offset = offset + limit if offset + limit < total else None
+    return {
+        "records": records,
+        "total_count": total,
+        "limit": limit,
+        "offset": offset,
+        "next_offset": next_offset,
+    }

@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db import get_db
+from app.db import get_db, get_db_readonly
 from app.models.carbon_budget import CarbonBudget
 from app.models.organization import Organization
 
@@ -42,7 +42,7 @@ def _parse_org_id(header_value: str | None) -> uuid.UUID | None:
 
 @router.get("", response_model=CarbonBudgetResponse | None)
 async def get_budget(
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_db_readonly),
     x_organization_id: str | None = Header(None, alias=ORG_HEADER),
 ) -> CarbonBudgetResponse | None:
     """Get carbon budget for org. Returns None if not configured."""

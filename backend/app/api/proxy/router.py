@@ -13,6 +13,7 @@ from app.db import get_db
 ORG_HEADER = "X-Organization-Id"
 REGION_HEADER = "X-Region"  # Electricity Maps zone (e.g. US-CAL-CISO)
 ROUTING_MODE_HEADER = "X-Routing-Mode"  # standard | optimize | latency_priority
+INCLUDE_INSIGHTS_HEADER = "X-Include-Insights"  # true = add carbon_insights to response
 
 router = APIRouter(prefix="/v1", tags=["proxy"])
 
@@ -43,6 +44,12 @@ def _get_routing_mode(request: Request) -> str:
     return "standard"
 
 
+def _include_insights(request: Request) -> bool:
+    """Check if X-Include-Insights: true is set."""
+    v = request.headers.get(INCLUDE_INSIGHTS_HEADER)
+    return v and v.strip().lower() == "true"
+
+
 @router.post("/chat/completions")
 async def chat_completions(
     request: Request,
@@ -54,6 +61,7 @@ async def chat_completions(
     org_id = _parse_org_id(request.headers.get(ORG_HEADER))
     region = _get_region(request)
     routing_mode = _get_routing_mode(request)
+    include_insights = _include_insights(request)
     result = await forward_chat_completion(
         body,
         stream=stream,
@@ -61,6 +69,7 @@ async def chat_completions(
         organization_id=org_id,
         region=region,
         routing_mode=routing_mode,
+        include_insights=include_insights,
     )
     if isinstance(result, StreamingResponse):
         return result

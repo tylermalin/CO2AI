@@ -61,6 +61,9 @@ class Settings(BaseSettings):
     default_model_params: int = 70_000_000_000  # fallback for unknown models
     electricitymap_default_zone: str = "US-CAL-CISO"  # zone when not specified
 
+    # Read-only DB URL for read replicas (optional). When set, read endpoints use it.
+    database_readonly_url: str | None = None
+
     def get_regions(self) -> list[dict[str, str]]:
         """Parsed upstream regions. Default: single region from openai_base_url."""
         parsed = _parse_upstream_regions(self.upstream_regions)
@@ -72,6 +75,17 @@ class Settings(BaseSettings):
                 "base_url": self.openai_base_url.rstrip("/"),
             }
         ]
+
+    def validate_for_production(self) -> list[str]:
+        """Validate config for production. Returns list of warnings/errors."""
+        issues = []
+        if self.jwt_secret == "change-me-in-production":
+            issues.append("JWT_SECRET should be changed in production")
+        if "localhost" in self.database_url or "127.0.0.1" in self.database_url:
+            issues.append("DATABASE_URL appears to use localhost - use production DB in prod")
+        if self.debug:
+            issues.append("DEBUG should be False in production")
+        return issues
 
 
 @lru_cache

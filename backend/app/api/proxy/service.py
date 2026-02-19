@@ -23,6 +23,7 @@ async def forward_chat_completion(
     region: str | None = None,
     routing_mode: str = "standard",
     carbon_intensity_provider=None,
+    include_insights: bool = False,
 ) -> dict | StreamingResponse:
     """Forward to OpenAI, extract usage, add carbon_estimate. Async."""
     settings = get_settings()
@@ -103,6 +104,19 @@ async def forward_chat_completion(
             routing_mode=decision.mode,
             routing_reason=decision.reason,
         )
+
+    # Optionally add optimization insights to response
+    if include_insights and db is not None:
+        from app.services.optimization_insights import generate_insights
+        insights = await generate_insights(db, organization_id=organization_id, days=30)
+        data["carbon_insights"] = [
+            {
+                "category": i.category,
+                "message": i.message,
+                "estimated_reduction_percent": round(i.estimated_reduction_percent, 1),
+            }
+            for i in insights[:3]  # Top 3 insights
+        ]
 
     return data
 

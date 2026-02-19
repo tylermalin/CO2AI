@@ -19,10 +19,10 @@ export async function getDailyTotals(days = 30, orgId = null) {
   return data.daily_totals;
 }
 
-export async function getRecentRequests(limit = 50, orgId = null) {
+export async function getRecentRequests(limit = 50, offset = 0, orgId = null) {
   const headers = orgId ? { 'X-Organization-Id': orgId } : {};
-  const { data } = await api.get(`/emissions/recent?limit=${limit}`, { headers });
-  return data.records;
+  const { data } = await api.get(`/emissions/recent?limit=${limit}&offset=${offset}`, { headers });
+  return { records: data.records || [], totalCount: data.total_count ?? data.records?.length ?? 0 };
 }
 
 export async function getBudget(orgId) {
@@ -31,4 +31,10 @@ export async function getBudget(orgId) {
     headers: { 'X-Organization-Id': orgId },
   });
   return data;
+}
+
+export async function getOptimizationInsights(orgId = null, days = 30) {
+  const headers = orgId ? { 'X-Organization-Id': orgId } : {};
+  const { data } = await api.get(`/optimization-insights?days=${days}`, { headers });
+  return data.insights || [];
 }

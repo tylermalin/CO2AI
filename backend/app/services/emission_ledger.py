@@ -96,33 +96,107 @@ async def daily_totals(
     ]
 
 
-async def last_n_requests(
+async def model_breakdown(
     db: AsyncSession,
-    n: int = 100,
     organization_id: uuid.UUID | None = None,
+    days: int = 30,
 ) -> list[dict]:
-    """Last N emission records, most recent first."""
+    """Per-model stats for last N days: model, total_tokens, total_kg_co2eq, request_count."""
+    now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(days=days)
+
     q = (
-        select(EmissionRecord)
-        .order_by(EmissionRecord.created_at.desc())
-        .limit(n)
+        select(
+            EmissionRecord.model,
+            func.sum(EmissionRecord.input_tokens + EmissionRecord.output_tokens).label("total_tokens"),
+            func.sum(EmissionRecord.carbon_kg_co2eq).label("total_kg_co2eq"),
+            func.count(EmissionRecord.id).label("request_count"),
+        )
+        .where(EmissionRecord.created_at >= cutoff)
+        .group_by(EmissionRecord.model)
     )
     if organization_id is not None:
         q = q.where(EmissionRecord.organization_id == organization_id)
     result = await db.execute(q)
-    records = result.scalars().all()
     return [
         {
-            "id": str(r.id),
-            "organization_id": str(r.organization_id) if r.organization_id else None,
             "model": r.model,
-            "input_tokens": r.input_tokens,
-            "output_tokens": r.output_tokens,
-            "carbon_kg_co2eq": float(r.carbon_kg_co2eq),
-            "routing_region": r.routing_region,
-            "routing_mode": r.routing_mode,
-            "routing_reason": r.routing_reason,
-            "created_at": r.created_at.isoformat() if r.created_at else None,
+            "total_tokens": int(r.total_tokens),
+            "total_kg_co2eq": float(r.total_kg_co2eq),
+            "request_count": int(r.request_count),
         }
-        for r in records
+        for r in result.all()
     ]
+
+
+async def routing_mode_stats(
+    db: AsyncSession,
+    organization_id: uuid.UUID | None = None,
+    days: int = 30,
+) -> dict[str, int]:
+    """Count of requests by routing_mode for last N days."""
+    now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(days=days)
+
+    mode_expr = func.coalesce(EmissionRecord.routing_mode, "unknown")
+    q = (
+        select(
+            mode_expr.label("mode"),
+            func.count(EmissionRecord.id).label("cnt"),
+        )
+        .where(EmissionRecord.created_at >= cutoff)
+        .group_by(mode_expr)
+    )
+    if organization_id is not None:
+        q = q.where(EmissionRecord.organization_id == organization_id)
+    result = await db.execute(q)
+    return {str(r.mode): int(r.cnt) for r in result.all()}
+
+
+async def last_n_requests(
+    db: AsyncSession,
+    n: int = 100,
+    offset: int = 0,
+    organization_id: uuid.UUID | None = None,
+) -> tuple[list[dict], int]:
+    """
+    Paginated emission records, most recent first.
+    Returns (records, total_count).
+    """
+    base_q = select(EmissionRecord)
+    if organization_id is not None:
+        base_q = base_q.where(EmissionRecord.organization_id == organization_id)
+
+    # Total count
+    count_q = select(func.count()).select_from(EmissionRecord)
+    if organization_id is not None:
+        count_q = count_q.where(EmissionRecord.organization_id == organization_id)
+    count_result = await db.execute(count_q)
+    total = count_result.scalar_one() or 0
+
+    # Paginated records
+    q = (
+        base_q.order_by(EmissionRecord.created_at.desc())
+        .limit(n)
+        .offset(offset)
+    )
+    result = await db.execute(q)
+    records = result.scalars().all()
+    return (
+        [
+            {
+                "id": str(r.id),
+                "organization_id": str(r.organization_id) if r.organization_id else None,
+                "model": r.model,
+                "input_tokens": r.input_tokens,
+                "output_tokens": r.output_tokens,
+                "carbon_kg_co2eq": float(r.carbon_kg_co2eq),
+                "routing_region": r.routing_region,
+                "routing_mode": r.routing_mode,
+                "routing_reason": r.routing_reason,
+                "created_at": r.created_at.isoformat() if r.created_at else None,
+            }
+            for r in records
+        ],
+        total,
+    )

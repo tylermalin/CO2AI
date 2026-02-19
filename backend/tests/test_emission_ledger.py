@@ -73,9 +73,10 @@ async def test_emission_ledger_db_writes_and_aggregations(db_session: AsyncSessi
     total = await monthly_total(db_session, organization_id=org_id)
     assert float(total) >= 1.5e-6
 
-    # last_n_requests
-    records = await last_n_requests(db_session, n=10, organization_id=org_id)
+    # last_n_requests (paginated)
+    records, total = await last_n_requests(db_session, n=10, organization_id=org_id)
     assert len(records) >= 3
+    assert total >= 3
     assert all("carbon_kg_co2eq" in r for r in records)
     assert all("created_at" in r for r in records)
 
