@@ -12,3 +12,26 @@
   --color-warning: #fbbf24;
   --color-danger: #f87171;
 }
+
+/* Research page: policy publication styling */
+.research-page main {
+  max-width: 900px;
+}
+.research-page h1,
+.research-page h2,
+.research-page h3 {
+  font-family: Georgia, "Times New Roman", serif;
+}
+.research-page p {
+  line-height: 1.7;
+}
+.research-page .research-section {
+  padding-bottom: 2.5rem;
+  margin-bottom: 2.5rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+}
+.research-page .research-section:last-of-type {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}

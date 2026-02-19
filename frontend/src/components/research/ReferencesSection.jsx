@@ -9,7 +9,7 @@ export default function ReferencesSection() {
   ];
 
   return (
-    <section className="mb-16" aria-labelledby="references-heading">
+    <section className="research-section" aria-labelledby="references-heading">
       <h2 id="references-heading" className="text-xl font-medium text-[var(--color-text)] mb-4">
         References
       </h2>

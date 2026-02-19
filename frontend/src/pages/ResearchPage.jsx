@@ -90,9 +90,9 @@ export default function ResearchPage() {
   });
 
   return (
-    <article className="min-h-screen bg-[#0b0f14] text-[var(--color-text)]">
-      <nav className="sticky top-0 z-10 border-b border-[var(--color-border)] bg-[#0b0f14]/95 backdrop-blur">
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
+    <article className="research-page min-h-screen bg-[#0b0f14] text-[var(--color-text)]">
+      <nav className="sticky top-0 z-10 border-b border-[var(--color-border)]/60 bg-[#0b0f14]/95 backdrop-blur">
+        <div className="max-w-[900px] mx-auto px-6 py-4 flex items-center justify-between">
           <Link to="/" className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)]">
             Mālama AI Carbon
           </Link>
@@ -105,7 +105,7 @@ export default function ResearchPage() {
         </div>
       </nav>
 
-      <main className="max-w-4xl mx-auto px-6 py-12">
+      <main className="mx-auto px-6 py-12">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8">
           <ExecutiveSummary />
           <a
@@ -118,7 +118,7 @@ export default function ResearchPage() {
         </div>
         <AdoptionContextCharts />
 
-        <section className="mb-16">
+        <section className="research-section">
           <h2 className="text-xl font-medium text-[var(--color-text)] mb-4">
             Model Assumptions
           </h2>
@@ -138,14 +138,14 @@ export default function ResearchPage() {
           />
         </section>
 
-        <section className="mb-16">
+        <section className="research-section">
           <h2 className="text-xl font-medium text-[var(--color-text)] mb-4">
             Results
           </h2>
           <EmissionsResults result={result} optimizedCo2Kg={optimizedCo2Kg} />
         </section>
 
-        <section className="mb-16">
+        <section className="research-section">
           <h2 className="text-xl font-medium text-[var(--color-text)] mb-2">
             Uncertainty Range
           </h2>

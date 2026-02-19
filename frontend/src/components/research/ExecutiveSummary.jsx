@@ -1,6 +1,6 @@
 export default function ExecutiveSummary() {
   return (
-    <section className="mb-16">
+    <section className="research-section">
       <h1 className="text-3xl font-semibold text-[var(--color-text)] tracking-tight">
         AI Carbon Outlook 2026
       </h1>

@@ -1,6 +1,6 @@
 export default function LimitationsSection() {
   return (
-    <section className="mb-16">
+    <section className="research-section">
       <h2 className="text-xl font-medium text-[var(--color-text)] mb-4">
         Methodological Note
       </h2>
