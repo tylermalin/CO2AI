@@ -9,6 +9,12 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://carbon:${DB_PASSWORD:-carbon}@db:5432/carbon_control
 
+  frontend:
+    build: ./frontend
+    ports: ["3000:80"]
+    depends_on:
+      - backend
+
   db:
     image: postgres:15-alpine
     environment:
