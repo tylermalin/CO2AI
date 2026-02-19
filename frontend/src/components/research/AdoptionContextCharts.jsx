@@ -14,15 +14,15 @@ export default function AdoptionContextCharts() {
 
   return (
     <section className="research-section">
-      <h2 className="text-xl font-medium text-[var(--color-text)] mb-4">
+      <h2 className="text-xl font-medium text-text mb-4">
         Adoption Context
       </h2>
-      <p className="text-sm text-[var(--color-text-muted)] mb-6 max-w-2xl">
+      <p className="text-sm text-text-muted mb-6 max-w-2xl">
         Sample of {totalCompanies.toLocaleString()} companies with material AI adoption
         (by industry). Used as baseline for scenario modeling.
       </p>
-      <div className="h-64">
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="w-full min-h-[256px]">
+        <ResponsiveContainer width="100%" height={256} minHeight={256}>
           <BarChart data={industries} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
             <XAxis dataKey="name" stroke="var(--color-text-muted)" fontSize={11} tick={{ fill: 'var(--color-text-muted)' }} />

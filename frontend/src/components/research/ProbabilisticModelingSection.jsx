@@ -1,10 +1,10 @@
 export default function ProbabilisticModelingSection() {
   return (
     <section className="research-section">
-      <h2 className="text-xl font-medium text-[var(--color-text)] mb-4">
+      <h2 className="text-xl font-medium text-text mb-4">
         Probabilistic Modeling Approach
       </h2>
-      <div className="text-sm text-[var(--color-text-muted)] space-y-3 max-w-2xl">
+      <div className="text-sm text-text-muted space-y-3 max-w-2xl">
         <p>
           Monte Carlo simulation is used to capture parameter uncertainty through
           random sampling. Rather than producing a single point estimate, the

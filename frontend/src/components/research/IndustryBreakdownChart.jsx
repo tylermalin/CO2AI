@@ -3,11 +3,11 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContaine
 export default function IndustryBreakdownChart({ data }) {
   return (
     <section className="research-section">
-      <h2 className="text-xl font-medium text-[var(--color-text)] mb-4">
+      <h2 className="text-xl font-medium text-text mb-4">
         Industry Breakdown (Annual)
       </h2>
-      <div className="h-80">
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="w-full min-h-[320px]">
+        <ResponsiveContainer width="100%" height={320} minHeight={320}>
           <BarChart data={data} margin={{ top: 8, right: 8, left: 8, bottom: 60 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
             <XAxis

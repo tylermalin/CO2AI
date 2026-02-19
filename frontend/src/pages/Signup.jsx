@@ -1,19 +1,23 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import Logo from '../components/Logo';
+import axios from 'axios';
 import { Magic } from 'magic-sdk';
+import { setToken } from '../utils/auth';
 
 const MAGIC_KEY = import.meta.env.VITE_MAGIC_PUBLISHABLE_KEY;
+const API_BASE = import.meta.env.VITE_API_URL || '/api/v1';
+const api = axios.create({ baseURL: API_BASE });
 
 export default function Signup() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [sent, setSent] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
-    setSent(false);
     const trimmed = email.trim();
     if (!trimmed) {
       setError('Enter your email');
@@ -26,52 +30,51 @@ export default function Signup() {
     setLoading(true);
     try {
       const magic = new Magic(MAGIC_KEY);
-      const redirectURI = `${window.location.origin}/auth/verify`;
-      await magic.auth.loginWithMagicLink({
+      const didToken = await magic.auth.loginWithEmailOTP({
         email: trimmed,
-        redirectURI,
-        showUI: false,
+        showUI: true,
       });
-      setSent(true);
+      if (didToken && typeof didToken === 'string') {
+        const { data } = await api.post('/auth/verify', { did_token: didToken });
+        const accessToken = data.access_token ?? data.token;
+        if (accessToken) {
+          setToken(accessToken);
+          navigate('/onboarding/connect-provider', { replace: true });
+          return;
+        }
+      }
+      setError('Verification failed');
     } catch (err) {
-      setError(err.message || 'Failed to send magic link');
+      setError(err.message || 'Failed to sign in');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
-      <header className="border-b border-[var(--color-border)] px-6 py-4">
+    <div className="min-h-screen bg-bg text-text">
+      <header className="border-b border-(--color-border) px-6 py-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <Link to="/" className="text-xl font-bold text-[var(--color-text)] hover:text-[var(--color-accent)] transition-colors">
-            Mālama AI Carbon
+          <Link to="/" className="text-xl font-bold text-text hover:text-accent transition-colors flex items-center">
+            <Logo className="h-7 text-text-heading" />
           </Link>
-          <Link to="/" className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)]">
+          <Link to="/" className="text-sm text-text-muted hover:text-text">
             ← Back
           </Link>
         </div>
       </header>
 
       <main className="max-w-md mx-auto px-6 py-12">
-        <h2 className="text-2xl font-semibold text-[var(--color-text)] mb-2">
+        <h2 className="text-2xl font-semibold text-text mb-2">
           Create account
         </h2>
-        <p className="text-[var(--color-text-muted)] mb-8">
-          We'll send you a magic link. No password required.
+        <p className="text-text-muted mb-8">
+          We'll send you a one-time code to sign in. No password required.
         </p>
 
-        {sent ? (
-          <div className="p-6 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg text-center">
-            <p className="text-[var(--color-text)] font-medium">Check your email</p>
-            <p className="text-sm text-[var(--color-text-muted)] mt-2">
-              Click the link we sent to {email} to sign in.
-            </p>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-[var(--color-text-muted)] mb-2">
+              <label className="block text-sm font-medium text-text-muted mb-2">
                 Email
               </label>
               <input
@@ -79,7 +82,7 @@ export default function Signup() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
-                className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg px-4 py-3 text-[var(--color-text)] placeholder-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                className="w-full bg-surface border border-(--color-border) rounded-lg px-4 py-3 text-text placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-accent"
               />
             </div>
 
@@ -92,15 +95,14 @@ export default function Signup() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 px-4 bg-[var(--color-accent)] text-[var(--color-bg)] font-medium rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+              className="w-full py-3 px-4 bg-accent text-bg font-medium rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
             >
-              {loading ? 'Sending…' : 'Send Magic Link'}
+              {loading ? 'Sending…' : 'Send Code'}
             </button>
           </form>
-        )}
 
-        <p className="mt-4 text-sm text-[var(--color-text-muted)] text-center">
-          <Link to="/estimate" className="text-[var(--color-accent)] hover:underline">
+        <p className="mt-4 text-sm text-text-muted text-center">
+          <Link to="/estimate" className="text-accent hover:underline">
             Back to estimate
           </Link>
         </p>

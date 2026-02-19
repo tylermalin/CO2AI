@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import Logo from '../components/Logo';
 import {
   getMonthlyTotal,
   getDailyTotals,
   getRecentRequests,
   getBudget,
   getOptimizationInsights,
+  runDemoRequest,
 } from '../api';
 import {
   AreaChart,
@@ -25,15 +27,15 @@ function SummaryCard({ title, value, unit, subtitle, format = 'exponential' }) {
         : Number(value).toExponential(3)
       : '—';
   return (
-    <div className="bg-[var(--color-surface)] rounded-xl p-5 border border-[var(--color-border)]">
-      <p className="text-sm text-[var(--color-text-muted)] uppercase tracking-wide">
+    <div className="bg-surface rounded-xl p-5 border border-(--color-border)">
+      <p className="text-sm text-text-muted uppercase tracking-wide">
         {title}
       </p>
-      <p className="text-2xl font-semibold text-[var(--color-text)] mt-1">
+      <p className="text-2xl font-semibold text-text mt-1">
         {displayValue} {unit}
       </p>
       {subtitle && (
-        <p className="text-xs text-[var(--color-text-muted)] mt-1">{subtitle}</p>
+        <p className="text-xs text-text-muted mt-1">{subtitle}</p>
       )}
     </div>
   );
@@ -47,15 +49,15 @@ function BudgetProgress({ used, limit, threshold }) {
   return (
     <div className="space-y-2">
       <div className="flex justify-between text-sm">
-        <span className="text-[var(--color-text-muted)]">Budget used</span>
-        <span className={isOver ? 'text-[var(--color-danger)]' : 'text-[var(--color-text)]'}>
+        <span className="text-text-muted">Budget used</span>
+        <span className={isOver ? 'text-danger' : 'text-text'}>
           {used?.toExponential(3) ?? '—'} / {limit?.toExponential(3) ?? '—'} kg
         </span>
       </div>
-      <div className="h-3 bg-[var(--color-surface-hover)] rounded-full overflow-hidden">
+      <div className="h-3 bg-(--color-surface-hover) rounded-full overflow-hidden">
         <div
           className={`h-full transition-all duration-500 ${
-            isOver ? 'bg-[var(--color-danger)]' : isWarning ? 'bg-[var(--color-warning)]' : 'bg-[var(--color-accent)]'
+            isOver ? 'bg-danger' : isWarning ? 'bg-warning' : 'bg-accent'
           }`}
           style={{ width: `${Math.min(pct, 100)}%` }}
         />
@@ -67,7 +69,7 @@ function BudgetProgress({ used, limit, threshold }) {
 function RequestHistoryTable({ records }) {
   if (!records?.length) {
     return (
-      <p className="text-[var(--color-text-muted)] text-sm py-8 text-center">
+      <p className="text-text-muted text-sm py-8 text-center">
         No requests yet
       </p>
     );
@@ -77,7 +79,7 @@ function RequestHistoryTable({ records }) {
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="text-left text-[var(--color-text-muted)] border-b border-[var(--color-border)]">
+          <tr className="text-left text-text-muted border-b border-(--color-border)">
             <th className="py-3 px-2">Model</th>
             <th className="py-3 px-2">Tokens</th>
             <th className="py-3 px-2">CO₂ (kg)</th>
@@ -89,13 +91,13 @@ function RequestHistoryTable({ records }) {
           {records.map((r) => (
             <tr
               key={r.id}
-              className="border-b border-[var(--color-border)] hover:bg-[var(--color-surface-hover)]"
+              className="border-b border-(--color-border) hover:bg-(--color-surface-hover)"
             >
               <td className="py-2 px-2 font-mono text-xs">{r.model}</td>
               <td className="py-2 px-2">{r.input_tokens + r.output_tokens}</td>
               <td className="py-2 px-2">{r.carbon_kg_co2eq?.toExponential(3) ?? '—'}</td>
               <td className="py-2 px-2 text-xs">{r.routing_region ?? '—'}</td>
-              <td className="py-2 px-2 text-xs text-[var(--color-text-muted)]">
+              <td className="py-2 px-2 text-xs text-text-muted">
                 {r.created_at ? new Date(r.created_at).toLocaleString() : '—'}
               </td>
             </tr>
@@ -117,24 +119,24 @@ function OptimizationInsights({ insights }) {
   if (!insights?.length) {
     return (
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-[var(--color-text-muted)] uppercase tracking-wide">
+        <h3 className="text-sm font-medium text-text-muted uppercase tracking-wide">
           Optimization insights
         </h3>
-        <p className="text-sm text-[var(--color-text-muted)]">No insights yet. Run some requests to get suggestions.</p>
+        <p className="text-sm text-text-muted">No insights yet. Run some requests to get suggestions.</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-medium text-[var(--color-text-muted)] uppercase tracking-wide">
+      <h3 className="text-sm font-medium text-text-muted uppercase tracking-wide">
         Optimization insights
       </h3>
       <ul className="space-y-2">
         {insights.map((i, idx) => (
           <li
             key={idx}
-            className={`text-sm p-3 rounded-lg ${categoryStyles[i.category] || 'bg-[var(--color-surface-hover)] text-[var(--color-text-muted)]'}`}
+            className={`text-sm p-3 rounded-lg ${categoryStyles[i.category] || 'bg-(--color-surface-hover) text-text-muted'}`}
           >
             <span className="block font-medium uppercase text-xs opacity-80 mb-1">{i.category}</span>
             <p>{i.message}</p>
@@ -160,27 +162,34 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [orgId, setOrgId] = useState('');
+  const [demoLoading, setDemoLoading] = useState(false);
+  const [demoMessage, setDemoMessage] = useState(null);
 
   useEffect(() => {
     async function load() {
       setLoading(true);
       setError(null);
       try {
-        const [monthlyVal, dailyVal, recentVal, budgetVal, insightsVal] = await Promise.all([
+        const results = await Promise.allSettled([
           getMonthlyTotal(orgId || null),
           getDailyTotals(14, orgId || null),
           getRecentRequests(20, 0, orgId || null),
           orgId ? getBudget(orgId) : Promise.resolve(null),
           getOptimizationInsights(orgId || null, 30),
         ]);
+        const [monthlyVal, dailyVal, recentVal, budgetVal, insightsVal] = results.map((r, i) => {
+          if (r.status === 'fulfilled') return r.value;
+          if (i === 3) return null;
+          throw r.reason;
+        });
         setMonthly(monthlyVal);
         setDaily(dailyVal || []);
-        setRecords(recentVal.records || []);
-        setTotalCount(recentVal.totalCount ?? 0);
-        setBudget(budgetVal);
-        setInsights(insightsVal);
+        setRecords(recentVal?.records || []);
+        setTotalCount(recentVal?.totalCount ?? recentVal?.records?.length ?? 0);
+        setBudget(budgetVal ?? null);
+        setInsights(Array.isArray(insightsVal) ? insightsVal : []);
       } catch (err) {
-        setError(err.message || 'Failed to fetch');
+        setError(err?.message || 'Failed to fetch');
       } finally {
         setLoading(false);
       }
@@ -190,6 +199,37 @@ export default function Dashboard() {
     return () => clearInterval(id);
   }, [orgId]);
 
+  const handleRunDemo = async () => {
+    setDemoLoading(true);
+    setDemoMessage(null);
+    try {
+      const res = await runDemoRequest();
+      setDemoMessage(res.message || 'Demo completed. Data will appear below.');
+      const results = await Promise.allSettled([
+        getMonthlyTotal(orgId || null),
+        getDailyTotals(14, orgId || null),
+        getRecentRequests(20, 0, orgId || null),
+        orgId ? getBudget(orgId) : Promise.resolve(null),
+        getOptimizationInsights(orgId || null, 30),
+      ]);
+      const [monthlyVal, dailyVal, recentVal, budgetVal, insightsVal] = results.map((r, i) => {
+        if (r.status === 'fulfilled') return r.value;
+        if (i === 3) return null;
+        throw r.reason;
+      });
+      setMonthly(monthlyVal);
+      setDaily(dailyVal || []);
+      setRecords(recentVal?.records || []);
+      setTotalCount(recentVal?.totalCount ?? 0);
+      setBudget(budgetVal ?? null);
+      setInsights(Array.isArray(insightsVal) ? insightsVal : []);
+    } catch (err) {
+      setDemoMessage(err.response?.data?.detail || err.message || 'Demo failed');
+    } finally {
+      setDemoLoading(false);
+    }
+  };
+
   const chartData = daily.map((d) => ({
     date: d.date,
     co2: d.total_kg_co2eq,
@@ -197,34 +237,50 @@ export default function Dashboard() {
   }));
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)]">
-      <header className="border-b border-[var(--color-border)] px-6 py-4">
+    <div className="min-h-screen bg-bg text-text">
+      <header className="border-b border-(--color-border) px-6 py-4">
         <div className="flex items-center justify-between">
-          <Link to="/" className="text-xl font-bold text-[var(--color-text)] hover:text-[var(--color-accent)] transition-colors">
-            Mālama AI Carbon
+          <Link to="/" className="text-xl font-bold text-text hover:text-accent transition-colors flex items-center">
+            <Logo className="h-7 text-text-heading" />
           </Link>
           <div className="flex items-center gap-4">
             <Link
               to="/estimate"
-              className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+              className="text-sm text-text-muted hover:text-text"
             >
               ← Quick estimate
             </Link>
           </div>
         </div>
-        <p className="text-sm text-[var(--color-text-muted)] mt-1">
+        <p className="text-sm text-text-muted mt-1">
           Emissions dashboard
         </p>
+        <p className="text-xs text-text-muted mt-1">
+          Data appears when requests go through the AICo2 proxy. Run a demo to see sample data.
+        </p>
+        <div className="mt-3 flex flex-wrap items-center gap-4">
+          <button
+            type="button"
+            onClick={handleRunDemo}
+            disabled={demoLoading}
+            className="px-4 py-2 bg-accent text-bg text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+          >
+            {demoLoading ? 'Running…' : 'Run demo request'}
+          </button>
+          {demoMessage && (
+            <span className="text-sm text-text-muted">{demoMessage}</span>
+          )}
+        </div>
         <div className="mt-3 flex items-center gap-4">
-          <label className="text-sm text-[var(--color-text-muted)]">
+          <label className="text-sm text-text-muted">
             Org ID (optional):
           </label>
           <input
             type="text"
             value={orgId}
             onChange={(e) => setOrgId(e.target.value)}
-            placeholder="UUID for org-scoped data"
-            className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-3 py-1.5 text-sm w-72"
+            placeholder="UUID (e.g. 550e8400-e29b-41d4-a716-446655440000)"
+            className="bg-surface border border-(--color-border) rounded px-3 py-1.5 text-sm w-72"
           />
         </div>
       </header>
@@ -237,7 +293,7 @@ export default function Dashboard() {
         )}
 
         {loading ? (
-          <p className="text-[var(--color-text-muted)]">Loading...</p>
+          <p className="text-text-muted">Loading...</p>
         ) : (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -258,17 +314,17 @@ export default function Dashboard() {
                 title="Budget limit"
                 value={budget?.monthly_limit_kg_co2eq}
                 unit="kg"
-                subtitle={budget ? `${budget.alert_threshold_pct}% alert` : 'No budget set'}
+                subtitle={budget ? `${budget.alert_threshold_pct}% alert` : 'Set budget — Upgrade to Pro (coming soon)'}
               />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2 bg-[var(--color-surface)] rounded-xl p-5 border border-[var(--color-border)]">
-                <h2 className="text-sm font-medium text-[var(--color-text-muted)] uppercase tracking-wide mb-4">
+              <div className="lg:col-span-2 bg-surface rounded-xl p-5 border border-(--color-border)">
+                <h2 className="text-sm font-medium text-text-muted uppercase tracking-wide mb-4">
                   Daily CO₂ (last 14 days)
                 </h2>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
+                <div className="w-full min-h-[256px]">
+                  <ResponsiveContainer width="100%" height={256} minHeight={256}>
                     <AreaChart data={chartData}>
                       <defs>
                         <linearGradient id="co2Grad" x1="0" y1="0" x2="0" y2="1">
@@ -300,9 +356,9 @@ export default function Dashboard() {
               </div>
 
               <div className="space-y-6">
-                {budget && (
-                  <div className="bg-[var(--color-surface)] rounded-xl p-5 border border-[var(--color-border)]">
-                    <h2 className="text-sm font-medium text-[var(--color-text-muted)] uppercase tracking-wide mb-4">
+                {budget ? (
+                  <div className="bg-surface rounded-xl p-5 border border-(--color-border)">
+                    <h2 className="text-sm font-medium text-text-muted uppercase tracking-wide mb-4">
                       Budget progress
                     </h2>
                     <BudgetProgress
@@ -311,15 +367,30 @@ export default function Dashboard() {
                       threshold={budget.alert_threshold_pct}
                     />
                   </div>
+                ) : (
+                  <div className="bg-surface rounded-xl p-5 border border-(--color-border)">
+                    <h2 className="text-sm font-medium text-text-muted uppercase tracking-wide mb-4">
+                      Carbon budget
+                    </h2>
+                    <p className="text-sm text-text-muted mb-3">
+                      Set a monthly CO₂ budget to track and enforce limits.
+                    </p>
+                    <p className="text-sm text-accent font-medium mb-2">
+                      Upgrade to Pro to set budget — Coming soon
+                    </p>
+                    <p className="text-xs text-text-muted">
+                      Pro includes budget enforcement, carbon-aware routing, and optimization insights.
+                    </p>
+                  </div>
                 )}
-                <div className="bg-[var(--color-surface)] rounded-xl p-5 border border-[var(--color-border)]">
+                <div className="bg-surface rounded-xl p-5 border border-(--color-border)">
                   <OptimizationInsights insights={insights} />
                 </div>
               </div>
             </div>
 
-            <div className="bg-[var(--color-surface)] rounded-xl p-5 border border-[var(--color-border)]">
-              <h2 className="text-sm font-medium text-[var(--color-text-muted)] uppercase tracking-wide mb-4">
+            <div className="bg-surface rounded-xl p-5 border border-(--color-border)">
+              <h2 className="text-sm font-medium text-text-muted uppercase tracking-wide mb-4">
                 Request history
               </h2>
               <RequestHistoryTable records={records} />

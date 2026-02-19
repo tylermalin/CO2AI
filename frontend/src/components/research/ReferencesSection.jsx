@@ -10,10 +10,10 @@ export default function ReferencesSection() {
 
   return (
     <section className="research-section" aria-labelledby="references-heading">
-      <h2 id="references-heading" className="text-xl font-medium text-[var(--color-text)] mb-4">
+      <h2 id="references-heading" className="text-xl font-medium text-text mb-4">
         References
       </h2>
-      <ol className="text-xs text-[var(--color-text-muted)] space-y-2 max-w-2xl list-decimal list-inside">
+      <ol className="text-xs text-text-muted space-y-2 max-w-2xl list-decimal list-inside">
         {refs.map((r) => (
           <li key={r.id} id={`ref-${r.id}`}>
             {r.text}

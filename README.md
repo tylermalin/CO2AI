@@ -6,7 +6,7 @@ AI is scaling rapidly. Its operational carbon footprint is largely invisible.
 
 CO2AI is an open, research-driven framework for estimating, tracking, and governing the energy use and associated CO₂ emissions of large language model (LLM) inference workloads.
 
-Developed by Mālama Labs, CO2AI applies digital MRV (Measurement, Reporting, and Verification) principles to AI infrastructure.
+Developed by AICo2, CO2AI applies digital MRV (Measurement, Reporting, and Verification) principles to AI infrastructure.
 
 ---
 
@@ -219,7 +219,7 @@ We welcome issues and pull requests.
 
 ## Related Work
 
-**Mālama Labs**  
+**AICo2**  
 Digital MRV systems for climate-aligned infrastructure.
 
 **AI Carbon Outlook 2026**  

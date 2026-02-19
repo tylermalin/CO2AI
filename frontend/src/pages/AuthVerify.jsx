@@ -57,13 +57,13 @@ export default function AuthVerify() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)] flex items-center justify-center">
+      <div className="min-h-screen bg-bg text-text flex items-center justify-center">
         <div className="max-w-md mx-auto px-6 text-center">
-          <p className="text-[var(--color-danger)] mb-4">{error}</p>
+          <p className="text-danger mb-4">{error}</p>
           <button
             type="button"
             onClick={() => navigate('/signup', { replace: true })}
-            className="text-sm text-[var(--color-accent)] hover:underline"
+            className="text-sm text-accent hover:underline"
           >
             Try again
           </button>
@@ -73,8 +73,8 @@ export default function AuthVerify() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)] flex items-center justify-center">
-      <p className="text-[var(--color-text-muted)]">Verifying…</p>
+    <div className="min-h-screen bg-bg text-text flex items-center justify-center">
+      <p className="text-text-muted">Verifying…</p>
     </div>
   );
 }

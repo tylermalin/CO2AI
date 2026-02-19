@@ -45,16 +45,16 @@ export default function ConnectProvider() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-[var(--color-text)]">
+      <h2 className="text-xl font-semibold text-text">
         Connect Your OpenAI API
       </h2>
-      <p className="text-sm text-[var(--color-text-muted)]">
+      <p className="text-sm text-text-muted">
         Paste your OpenAI API key. We'll validate it before storing.
       </p>
 
       <form onSubmit={handleTest} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-[var(--color-text-muted)] mb-2">
+          <label className="block text-sm font-medium text-text-muted mb-2">
             API key
           </label>
           <input
@@ -65,7 +65,7 @@ export default function ConnectProvider() {
               setTested(false);
             }}
             placeholder="sk-..."
-            className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg px-4 py-3 text-[var(--color-text)] placeholder-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] font-mono text-sm"
+            className="w-full bg-surface border border-(--color-border) rounded-lg px-4 py-3 text-text placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-accent font-mono text-sm"
           />
         </div>
 
@@ -78,19 +78,19 @@ export default function ConnectProvider() {
         <button
           type="submit"
           disabled={loading || !apiKey.trim()}
-          className="py-2 px-4 border border-[var(--color-border)] rounded-lg text-[var(--color-text)] hover:bg-[var(--color-surface)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="py-2 px-4 border border-(--color-border) rounded-lg text-text hover:bg-surface disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {loading ? 'Testing…' : 'Test key'}
         </button>
       </form>
 
       {tested && (
-        <div className="pt-4 border-t border-[var(--color-border)]">
-          <p className="text-sm text-[var(--color-success)] mb-4">Key validated successfully.</p>
+        <div className="pt-4 border-t border-(--color-border)">
+          <p className="text-sm text-success mb-4">Key validated successfully.</p>
           <button
             type="button"
             onClick={handleContinue}
-            className="py-3 px-6 bg-[var(--color-accent)] text-[var(--color-bg)] font-medium rounded-lg hover:opacity-90 transition-opacity"
+            className="py-3 px-6 bg-accent text-bg font-medium rounded-lg hover:opacity-90 transition-opacity"
           >
             Continue to Dashboard
           </button>

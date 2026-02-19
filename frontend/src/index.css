@@ -1,16 +1,31 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg: #0f172a;
-  --color-surface: #1e293b;
-  --color-surface-hover: #334155;
-  --color-border: #334155;
-  --color-text: #f1f5f9;
-  --color-text-muted: #94a3b8;
-  --color-accent: #38bdf8;
-  --color-success: #4ade80;
+  /* AICo2: dark theme, earth tones, teal accent */
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Manrope", var(--font-sans);
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --color-bg: #0c1222;
+  --color-surface: #141c2e;
+  --color-surface-hover: #1e2a42;
+  --color-border: #243047;
+  --color-text: #e8edf4;
+  --color-text-heading: #e8edf4;
+  --color-text-muted: #8b9cb4;
+  --color-accent: #14b8a6;
+  --color-success: #34d399;
   --color-warning: #fbbf24;
   --color-danger: #f87171;
+}
+
+body {
+  font-family: var(--font-sans);
+  line-height: 1.7;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  color: var(--color-text-heading);
 }
 
 /* Research page: policy publication styling */
@@ -20,7 +35,7 @@
 .research-page h1,
 .research-page h2,
 .research-page h3 {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: var(--font-display);
 }
 .research-page p {
   line-height: 1.7;

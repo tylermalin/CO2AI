@@ -59,7 +59,7 @@ def build_policy_brief_pdf() -> bytes:
     story.append(Paragraph("AI Carbon Outlook 2026", title_style))
     story.append(Paragraph(
         "Scenario-based modeling of AI inference emissions across industries. "
-        "Mālama AI Carbon Research.",
+        "AICo2 Research.",
         body_style,
     ))
     story.append(Spacer(1, 0.25 * inch))
@@ -155,7 +155,7 @@ def build_policy_brief_pdf() -> bytes:
     story.append(Spacer(1, 0.2 * inch))
 
     story.append(Paragraph(
-        "— Mālama AI Carbon Research. Not audited. For illustrative use only.",
+        "— AICo2 Research. Not audited. For illustrative use only.",
         small_style,
     ))
 

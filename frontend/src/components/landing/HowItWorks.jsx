@@ -15,21 +15,21 @@ export default function HowItWorks() {
   ];
 
   return (
-    <section className="py-16 px-6 bg-[var(--color-surface)]">
+    <section className="py-16 px-6 bg-surface">
       <div className="max-w-4xl mx-auto">
-        <h2 className="text-2xl font-semibold text-[var(--color-text)]">
+        <h2 className="text-2xl font-semibold text-text">
           How It Works
         </h2>
         <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-8">
           {steps.map((step, i) => (
-            <div key={i} className="border border-[var(--color-border)] rounded-lg p-6">
-              <span className="text-sm font-medium text-[var(--color-accent)]">
+            <div key={i} className="border border-(--color-border) rounded-lg p-6">
+              <span className="text-sm font-medium text-accent">
                 {String(i + 1).padStart(2, '0')}
               </span>
-              <h3 className="text-lg font-semibold text-[var(--color-text)] mt-2">
+              <h3 className="text-lg font-semibold text-text mt-2">
                 {step.title}
               </h3>
-              <p className="text-[var(--color-text-muted)] mt-2 text-sm">
+              <p className="text-text-muted mt-2 text-sm">
                 {step.description}
               </p>
             </div>

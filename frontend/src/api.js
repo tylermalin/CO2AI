@@ -38,3 +38,8 @@ export async function getOptimizationInsights(orgId = null, days = 30) {
   const { data } = await api.get(`/optimization-insights?days=${days}`, { headers });
   return data.insights || [];
 }
+
+export async function runDemoRequest() {
+  const { data } = await api.post('/demo/request');
+  return data;
+}

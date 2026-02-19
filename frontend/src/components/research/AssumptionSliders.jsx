@@ -2,8 +2,8 @@ function Slider({ label, value, min, max, step, format, onChange }) {
   return (
     <div className="mb-6">
       <div className="flex justify-between text-sm mb-1">
-        <label className="text-[var(--color-text-muted)]">{label}</label>
-        <span className="text-[var(--color-text)] font-mono">{format(value)}</span>
+        <label className="text-text-muted">{label}</label>
+        <span className="text-text font-mono">{format(value)}</span>
       </div>
       <input
         type="range"
@@ -12,7 +12,7 @@ function Slider({ label, value, min, max, step, format, onChange }) {
         step={step}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full h-2 bg-[var(--color-surface-hover)] rounded-lg appearance-none cursor-pointer accent-[var(--color-accent)]"
+        className="w-full h-2 bg-(--color-surface-hover) rounded-lg appearance-none cursor-pointer accent-accent"
       />
     </div>
   );

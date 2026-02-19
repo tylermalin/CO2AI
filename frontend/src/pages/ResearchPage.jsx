@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import Logo from '../components/Logo';
 import { calculateEmissions, calculateRange } from '../utils/carbonModel';
 import { AreaChart, Area, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, ReferenceLine } from 'recharts';
 import ExecutiveSummary from '../components/research/ExecutiveSummary';
@@ -60,7 +61,7 @@ export default function ResearchPage() {
   }));
 
   useEffect(() => {
-    const title = 'AI Carbon Outlook 2026 | Mālama AI Carbon Research';
+    const title = 'AI Carbon Outlook 2026 | AICo2 Research';
     const description = 'Scenario-based modeling of AI inference emissions across industries. Policy brief with uncertainty bands, methodology, and citations.';
     document.title = title;
     const setMeta = (attr, key, val) => {
@@ -78,7 +79,7 @@ export default function ResearchPage() {
     setMeta('property', 'og:type', 'article');
     setMeta('name', 'robots', 'index, follow');
     return () => {
-      document.title = 'Mālama AI Carbon – Make AI measurable. Make AI accountable.';
+      document.title = 'AICo2 – Make AI measurable. Make AI accountable.';
     };
   }, []);
 
@@ -94,11 +95,17 @@ export default function ResearchPage() {
         iterations: '10000',
       });
       const res = await fetch(`/api/research/monte-carlo?${params}`);
-      if (!res.ok) throw new Error('Simulation failed');
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const detail = Array.isArray(data.detail)
+          ? data.detail.map((d) => d.msg || JSON.stringify(d)).join('; ')
+          : data.detail || `Simulation failed (${res.status})`;
+        throw new Error(detail);
+      }
       setMonteCarloResult(data);
     } catch (err) {
-      setMonteCarloResult({ error: err.message });
+      const msg = err.message || 'Simulation failed';
+      setMonteCarloResult({ error: msg });
     } finally {
       setMonteCarloLoading(false);
     }
@@ -115,15 +122,15 @@ export default function ResearchPage() {
   });
 
   return (
-    <article className="research-page min-h-screen bg-[#0b0f14] text-[var(--color-text)]">
-      <nav className="sticky top-0 z-10 border-b border-[var(--color-border)]/60 bg-[#0b0f14]/95 backdrop-blur">
+    <article className="research-page min-h-screen bg-bg text-text">
+      <nav className="sticky top-0 z-10 border-b border-(--color-border) bg-bg/95 backdrop-blur">
         <div className="max-w-[900px] mx-auto px-6 py-4 flex items-center justify-between">
-          <Link to="/" className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)]">
-            Mālama AI Carbon
+          <Link to="/" className="text-sm text-text-muted hover:text-text flex items-center">
+            <Logo className="h-6 text-text-heading" />
           </Link>
           <Link
             to="/estimate"
-            className="text-sm text-[var(--color-accent)] hover:underline"
+            className="text-sm text-accent hover:underline"
           >
             Quick Estimate →
           </Link>
@@ -134,9 +141,10 @@ export default function ResearchPage() {
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8">
           <ExecutiveSummary />
           <a
-            href="/api/research/outlook-2026.pdf"
-            download="AI_Carbon_Outlook_2026.pdf"
-            className="shrink-0 px-4 py-2 text-sm border border-[var(--color-border)] rounded text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-text-muted)] transition-colors self-start"
+            href="https://drive.google.com/file/d/1ShDMUPbipZDszQrdWZbc6gHjxDkFvvP-/view?usp=sharing"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="shrink-0 px-4 py-2 text-sm border border-(--color-border) rounded text-text-muted hover:text-text hover:border-text-muted transition-colors self-start"
           >
             Download Policy Brief (PDF)
           </a>
@@ -144,10 +152,10 @@ export default function ResearchPage() {
         <AdoptionContextCharts />
 
         <section className="research-section">
-          <h2 className="text-xl font-medium text-[var(--color-text)] mb-4">
+          <h2 className="text-xl font-medium text-text mb-4">
             Model Assumptions
           </h2>
-          <p className="text-sm text-[var(--color-text-muted)] mb-6 max-w-2xl">
+          <p className="text-sm text-text-muted mb-6 max-w-2xl">
             Adjust sliders to explore sensitivity. Values reflect illustrative
             scenarios, not audited data.
           </p>
@@ -164,7 +172,7 @@ export default function ResearchPage() {
         </section>
 
         <section className="research-section">
-          <h2 className="text-xl font-medium text-[var(--color-text)] mb-4">
+          <h2 className="text-xl font-medium text-text mb-4">
             Results
           </h2>
           <EmissionsResults result={result} optimizedCo2Kg={optimizedCo2Kg} />
@@ -173,38 +181,38 @@ export default function ResearchPage() {
         <ProbabilisticModelingSection />
 
         <section className="research-section">
-          <h2 className="text-xl font-medium text-[var(--color-text)] mb-4">
+          <h2 className="text-xl font-medium text-text mb-4">
             Monte Carlo Simulation
           </h2>
           <button
             type="button"
             onClick={runMonteCarlo}
             disabled={monteCarloLoading}
-            className="px-4 py-2 text-sm border border-[var(--color-border)] rounded text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-text-muted)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 text-sm border border-(--color-border) rounded text-text-muted hover:text-text hover:border-text-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {monteCarloLoading ? 'Running…' : 'Run Monte Carlo Simulation'}
           </button>
           {monteCarloResult?.error && (
-            <p className="mt-4 text-sm text-[var(--color-danger)]">{monteCarloResult.error}</p>
+            <p className="mt-4 text-sm text-danger">{monteCarloResult.error}</p>
           )}
           {monteCarloResult && !monteCarloResult.error && (
             <>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
-                <div className="p-4 border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)]">
-                  <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">Mean</p>
-                  <p className="text-lg font-semibold text-[var(--color-text)] mt-1">{monteCarloResult.mean.toFixed(1)} t</p>
+                <div className="p-4 border border-(--color-border) rounded-lg bg-surface">
+                  <p className="text-xs uppercase tracking-wide text-text-muted">Mean</p>
+                  <p className="text-lg font-semibold text-text mt-1">{monteCarloResult.mean.toFixed(1)} t</p>
                 </div>
-                <div className="p-4 border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)]">
-                  <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">Median (P50)</p>
-                  <p className="text-lg font-semibold text-[var(--color-text)] mt-1">{monteCarloResult.median.toFixed(1)} t</p>
+                <div className="p-4 border border-(--color-border) rounded-lg bg-surface">
+                  <p className="text-xs uppercase tracking-wide text-text-muted">Median (P50)</p>
+                  <p className="text-lg font-semibold text-text mt-1">{monteCarloResult.median.toFixed(1)} t</p>
                 </div>
-                <div className="p-4 border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)]">
-                  <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">P10</p>
-                  <p className="text-lg font-semibold text-[var(--color-text)] mt-1">{monteCarloResult.p10.toFixed(1)} t</p>
+                <div className="p-4 border border-(--color-border) rounded-lg bg-surface">
+                  <p className="text-xs uppercase tracking-wide text-text-muted">P10</p>
+                  <p className="text-lg font-semibold text-text mt-1">{monteCarloResult.p10.toFixed(1)} t</p>
                 </div>
-                <div className="p-4 border border-[var(--color-border)] rounded-lg bg-[var(--color-surface)]">
-                  <p className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">P90</p>
-                  <p className="text-lg font-semibold text-[var(--color-text)] mt-1">{monteCarloResult.p90.toFixed(1)} t</p>
+                <div className="p-4 border border-(--color-border) rounded-lg bg-surface">
+                  <p className="text-xs uppercase tracking-wide text-text-muted">P90</p>
+                  <p className="text-lg font-semibold text-text mt-1">{monteCarloResult.p90.toFixed(1)} t</p>
                 </div>
               </div>
               {(() => {
@@ -224,11 +232,11 @@ export default function ResearchPage() {
                 });
                 return (
                   <div className="mt-8">
-                    <p className="text-sm text-[var(--color-text-muted)] mb-4">
+                    <p className="text-sm text-text-muted mb-4">
                       Distribution of annual CO₂ emissions under modeled parameter uncertainty.
                     </p>
-                    <div className="h-64">
-                      <ResponsiveContainer width="100%" height="100%">
+                    <div className="w-full min-h-[256px]">
+                      <ResponsiveContainer width="100%" height={256} minHeight={256}>
                         <BarChart data={bins} margin={{ top: 8, right: 8, left: 8, bottom: 24 }}>
                           <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                           <XAxis dataKey="binLabel" stroke="var(--color-text-muted)" fontSize={10} angle={-45} textAnchor="end" height={50} />
@@ -240,7 +248,7 @@ export default function ResearchPage() {
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
-                    <p className="text-xs text-[var(--color-text-muted)] mt-2">
+                    <p className="text-xs text-text-muted mt-2">
                       Vertical lines: P10, P50 (median), P90. P10–P90 span 80% confidence interval.
                     </p>
                   </div>
@@ -251,15 +259,15 @@ export default function ResearchPage() {
         </section>
 
         <section className="research-section">
-          <h2 className="text-xl font-medium text-[var(--color-text)] mb-2">
+          <h2 className="text-xl font-medium text-text mb-2">
             Uncertainty Range
           </h2>
-          <p className="text-sm text-[var(--color-text-muted)] mb-4">
+          <p className="text-sm text-text-muted mb-4">
             Shaded region represents modeled uncertainty range (±20–30% parameter sensitivity)
-            (Patterson et al., 2021)<sup><a href="#ref-3" className="text-[var(--color-accent)] no-underline" aria-label="Reference 3">[3]</a></sup>.
+            (Patterson et al., 2021)<sup><a href="#ref-3" className="text-accent no-underline" aria-label="Reference 3">[3]</a></sup>.
           </p>
-          <div className="h-48">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="w-full min-h-[192px]">
+            <ResponsiveContainer width="100%" height={192} minHeight={192}>
               <AreaChart data={uncertaintyChartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                 <XAxis dataKey="name" stroke="var(--color-text-muted)" fontSize={11} />
@@ -282,9 +290,10 @@ export default function ResearchPage() {
         <LimitationsSection />
         <div className="mb-16">
           <a
-            href="/api/research/outlook-2026.pdf"
-            download="AI_Carbon_Outlook_2026.pdf"
-            className="inline-block px-4 py-2 text-sm border border-[var(--color-border)] rounded text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-text-muted)] transition-colors"
+            href="https://drive.google.com/file/d/1ShDMUPbipZDszQrdWZbc6gHjxDkFvvP-/view?usp=sharing"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block px-4 py-2 text-sm border border-(--color-border) rounded text-text-muted hover:text-text hover:border-text-muted transition-colors"
           >
             Download Policy Brief (PDF)
           </a>
