@@ -8,7 +8,9 @@ import {
   getBudget,
   getOptimizationInsights,
   runDemoRequest,
+  createOrganization,
 } from '../api';
+import { getStoredOrgId, setStoredOrgId } from '../utils/auth';
 import {
   AreaChart,
   Area,
@@ -161,21 +163,37 @@ export default function Dashboard() {
   const [daily, setDaily] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [orgId, setOrgId] = useState('');
+  const [orgId, setOrgId] = useState(getStoredOrgId);
   const [demoLoading, setDemoLoading] = useState(false);
   const [demoMessage, setDemoMessage] = useState(null);
+  const [creatingOrg, setCreatingOrg] = useState(false);
+
+  // Ensure we have an org on first load (e.g. if user cleared localStorage)
+  useEffect(() => {
+    if (!orgId && !creatingOrg) {
+      setCreatingOrg(true);
+      createOrganization()
+        .then(({ id }) => {
+          setStoredOrgId(id);
+          setOrgId(id);
+        })
+        .catch(() => setError('Could not create organization. Try refreshing.'))
+        .finally(() => setCreatingOrg(false));
+    }
+  }, []);
 
   useEffect(() => {
+    if (!orgId) return;
     async function load() {
       setLoading(true);
       setError(null);
       try {
         const results = await Promise.allSettled([
-          getMonthlyTotal(orgId || null),
-          getDailyTotals(14, orgId || null),
-          getRecentRequests(20, 0, orgId || null),
-          orgId ? getBudget(orgId) : Promise.resolve(null),
-          getOptimizationInsights(orgId || null, 30),
+          getMonthlyTotal(orgId),
+          getDailyTotals(14, orgId),
+          getRecentRequests(20, 0, orgId),
+          getBudget(orgId),
+          getOptimizationInsights(orgId, 30),
         ]);
         const [monthlyVal, dailyVal, recentVal, budgetVal, insightsVal] = results.map((r, i) => {
           if (r.status === 'fulfilled') return r.value;
@@ -203,14 +221,14 @@ export default function Dashboard() {
     setDemoLoading(true);
     setDemoMessage(null);
     try {
-      const res = await runDemoRequest();
+      const res = await runDemoRequest(orgId || undefined);
       setDemoMessage(res.message || 'Demo completed. Data will appear below.');
       const results = await Promise.allSettled([
-        getMonthlyTotal(orgId || null),
-        getDailyTotals(14, orgId || null),
-        getRecentRequests(20, 0, orgId || null),
-        orgId ? getBudget(orgId) : Promise.resolve(null),
-        getOptimizationInsights(orgId || null, 30),
+        getMonthlyTotal(orgId),
+        getDailyTotals(14, orgId),
+        getRecentRequests(20, 0, orgId),
+        getBudget(orgId),
+        getOptimizationInsights(orgId, 30),
       ]);
       const [monthlyVal, dailyVal, recentVal, budgetVal, insightsVal] = results.map((r, i) => {
         if (r.status === 'fulfilled') return r.value;
@@ -256,13 +274,13 @@ export default function Dashboard() {
           Emissions dashboard
         </p>
         <p className="text-xs text-text-muted mt-1">
-          Data appears when requests go through the AICo2 proxy. Run a demo to see sample data.
+          Your org ID scopes emissions to your account. Run a demo or route your app through the proxy to see data.
         </p>
         <div className="mt-3 flex flex-wrap items-center gap-4">
           <button
             type="button"
             onClick={handleRunDemo}
-            disabled={demoLoading}
+            disabled={demoLoading || creatingOrg || !orgId}
             className="px-4 py-2 bg-accent text-bg text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
           >
             {demoLoading ? 'Running…' : 'Run demo request'}
@@ -271,17 +289,26 @@ export default function Dashboard() {
             <span className="text-sm text-text-muted">{demoMessage}</span>
           )}
         </div>
-        <div className="mt-3 flex items-center gap-4">
-          <label className="text-sm text-text-muted">
-            Org ID (optional):
-          </label>
-          <input
-            type="text"
-            value={orgId}
-            onChange={(e) => setOrgId(e.target.value)}
-            placeholder="UUID (e.g. 550e8400-e29b-41d4-a716-446655440000)"
-            className="bg-surface border border-(--color-border) rounded px-3 py-1.5 text-sm w-72"
-          />
+        <div className="mt-3 space-y-2">
+          <div className="flex items-center gap-4">
+            <label className="text-sm text-text-muted">Your org ID:</label>
+            <input
+              type="text"
+              value={orgId}
+              onChange={(e) => {
+                const v = e.target.value;
+                setOrgId(v);
+                setStoredOrgId(v || '');
+              }}
+              placeholder={creatingOrg ? 'Creating…' : 'UUID'}
+              readOnly={!!creatingOrg}
+              className="bg-surface border border-(--color-border) rounded px-3 py-1.5 text-sm w-72 font-mono"
+            />
+          </div>
+          <p className="text-xs text-text-muted max-w-xl">
+            To track your app&apos;s emissions: set your OpenAI base URL to the AICo2 proxy and add header{' '}
+            <code className="bg-(--color-surface-hover) px-1 rounded">X-Organization-Id: {orgId || 'your-org-id'}</code>
+          </p>
         </div>
       </header>
 
@@ -292,7 +319,11 @@ export default function Dashboard() {
           </div>
         )}
 
-        {loading ? (
+        {!orgId ? (
+          <p className="text-text-muted">
+            {creatingOrg ? 'Creating your organization…' : 'Loading…'}
+          </p>
+        ) : loading ? (
           <p className="text-text-muted">Loading...</p>
         ) : (
           <div className="space-y-6">
@@ -378,7 +409,14 @@ export default function Dashboard() {
                     <p className="text-sm text-accent font-medium mb-2">
                       Upgrade to Pro to set budget — Coming soon
                     </p>
-                    <p className="text-xs text-text-muted">
+                    <button
+                      type="button"
+                      onClick={() => alert('Thanks! We\'ll notify you when Pro is available.')}
+                      className="mt-2 px-4 py-2 text-sm font-medium rounded-lg border border-accent text-accent hover:bg-accent/10 transition-colors"
+                    >
+                      Notify me when Pro is Available
+                    </button>
+                    <p className="text-xs text-text-muted mt-3">
                       Pro includes budget enforcement, carbon-aware routing, and optimization insights.
                     </p>
                   </div>

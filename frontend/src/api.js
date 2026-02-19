@@ -39,7 +39,13 @@ export async function getOptimizationInsights(orgId = null, days = 30) {
   return data.insights || [];
 }
 
-export async function runDemoRequest() {
-  const { data } = await api.post('/demo/request');
+export async function runDemoRequest(orgId = null) {
+  const headers = orgId ? { 'X-Organization-Id': orgId } : {};
+  const { data } = await api.post('/demo/request', {}, { headers });
+  return data;
+}
+
+export async function createOrganization() {
+  const { data } = await api.post('/organizations');
   return data;
 }

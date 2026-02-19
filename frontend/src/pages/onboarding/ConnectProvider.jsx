@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { setProviderConnected } from '../../utils/auth';
+import { setProviderConnected, setStoredOrgId } from '../../utils/auth';
+import { createOrganization } from '../../api';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api/v1';
 const api = axios.create({ baseURL: API_BASE });
@@ -38,9 +39,19 @@ export default function ConnectProvider() {
     }
   };
 
-  const handleContinue = () => {
-    setProviderConnected();
-    navigate('/dashboard', { replace: true });
+  const handleContinue = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { id } = await createOrganization();
+      setStoredOrgId(id);
+      setProviderConnected();
+      navigate('/dashboard', { replace: true });
+    } catch (err) {
+      setError(err.response?.data?.detail || err.message || 'Failed to create organization');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -84,15 +95,18 @@ export default function ConnectProvider() {
         </button>
       </form>
 
-      {tested && (
+      {(tested || true) && (
         <div className="pt-4 border-t border-(--color-border)">
-          <p className="text-sm text-success mb-4">Key validated successfully.</p>
+          <p className="text-sm text-text-muted mb-4">
+            {tested ? 'Key validated successfully.' : 'Create an organization to track your emissions.'}
+          </p>
           <button
             type="button"
             onClick={handleContinue}
-            className="py-3 px-6 bg-accent text-bg font-medium rounded-lg hover:opacity-90 transition-opacity"
+            disabled={loading}
+            className="py-3 px-6 bg-accent text-bg font-medium rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Continue to Dashboard
+            {loading ? 'Creating…' : 'Continue to Dashboard'}
           </button>
         </div>
       )}

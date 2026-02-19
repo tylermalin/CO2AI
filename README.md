@@ -1,16 +1,16 @@
-# CO2AI
+# AICo2
 
 **Carbon Accounting & Governance for AI Inference**
 
 AI is scaling rapidly. Its operational carbon footprint is largely invisible.
 
-CO2AI is an open, research-driven framework for estimating, tracking, and governing the energy use and associated CO₂ emissions of large language model (LLM) inference workloads.
+AICo2 is an open, research-driven framework for estimating, tracking, and governing the energy use and associated CO₂ emissions of large language model (LLM) inference workloads.
 
-Developed by AICo2, CO2AI applies digital MRV (Measurement, Reporting, and Verification) principles to AI infrastructure.
+A Mālama Labs project. Applies digital MRV (Measurement, Reporting, and Verification) principles to AI infrastructure.
 
 ---
 
-## Why CO2AI?
+## Why AICo2?
 
 As AI inference becomes embedded in applications, workflows, and infrastructure:
 
@@ -18,13 +18,13 @@ As AI inference becomes embedded in applications, workflows, and infrastructure:
 - Sustainability teams track electricity procurement.
 - Few organizations track inference emissions per request.
 
-CO2AI bridges that gap by attaching carbon intelligence directly to AI operations.
+AICo2 bridges that gap by attaching carbon intelligence directly to AI operations.
 
 ---
 
 ## What It Does
 
-CO2AI provides:
+AICo2 provides:
 
 - Per-request energy and CO₂ estimation
 - Organization-level emissions tracking
@@ -43,12 +43,12 @@ All built using transparent assumptions and documented methodology.
 ```
 Client Application
         ↓
-CO2AI Proxy (OpenAI-compatible)
+AICo2 Proxy (OpenAI-compatible)
         ↓
 Upstream LLM Provider
 ```
 
-At each inference call, CO2AI:
+At each inference call, AICo2:
 
 1. Estimates FLOPs based on token usage.
 2. Converts compute to energy using hardware efficiency assumptions.
@@ -62,7 +62,7 @@ At each inference call, CO2AI:
 
 ## Research Basis
 
-CO2AI builds on established work in machine learning energy reporting and software carbon accounting:
+AICo2 builds on established work in machine learning energy reporting and software carbon accounting:
 
 - Henderson et al., 2020 – Systematic reporting of ML energy and carbon footprints (JMLR)
 - Strubell et al., 2019 – Energy considerations for NLP
@@ -97,7 +97,7 @@ Carbon becomes a governed operational metric.
 
 ### 3. Carbon-Aware Routing
 
-CO2AI can evaluate:
+AICo2 can evaluate:
 
 - Real-time grid carbon intensity
 - Model energy characteristics
@@ -116,13 +116,27 @@ Interactive industry-level carbon modeling with:
 
 ---
 
+## Getting Your Request History
+
+To see emissions and model usage in the dashboard:
+
+1. **Sign up** and complete onboarding (creates your organization).
+2. **Run a demo** from the dashboard to log a sample request.
+3. **Route your app** through the AICo2 proxy:
+   - Set your OpenAI base URL to the proxy (e.g. `https://your-backend.example.com/v1`)
+   - Add header: `X-Organization-Id: <your-org-id>`
+
+Your org ID is shown on the dashboard. All emissions attributed to that org appear in your request history, daily totals, and optimization insights.
+
+---
+
 ## Installation
 
 ### Backend
 
 ```bash
-git clone https://github.com/tylermalin/CO2AI.git
-cd CO2AI/backend
+git clone https://github.com/tylermalin/AIC02.git
+cd AIC02/backend
 pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
@@ -151,15 +165,20 @@ Set environment variables:
 DATABASE_URL=
 OPENAI_API_KEY=
 ELECTRICITYMAP_API_KEY=
+MAGIC_SECRET_KEY=          # For Magic auth (sk_live_...)
+JWT_SECRET=                # openssl rand -hex 32
 DEFAULT_PUE=1.3
 DEFAULT_CARBON_INTENSITY=0.4
+CORS_ORIGINS=              # Comma-separated frontend origins
 ```
+
+See `docs/VERCEL_DEPLOYMENT.md` and `docs/RAILWAY_DEPLOYMENT.md` for production deployment.
 
 ---
 
 ## Monte Carlo Modeling
 
-CO2AI includes probabilistic modeling to account for uncertainty in:
+AICo2 includes probabilistic modeling to account for uncertainty in:
 
 - Token usage
 - Hardware energy intensity
@@ -179,7 +198,7 @@ This enables confidence interval reporting rather than single-point claims.
 
 ## Methodological Limitations
 
-CO2AI does not claim:
+AICo2 does not claim:
 
 - Direct measurement of provider hardware telemetry
 - Embodied carbon accounting
@@ -203,7 +222,7 @@ All results are model-based estimates with documented assumptions.
 
 ## Contributing
 
-CO2AI is research-driven and open to collaboration.
+AICo2 is research-driven and open to collaboration.
 
 If you are working on:
 
@@ -219,7 +238,7 @@ We welcome issues and pull requests.
 
 ## Related Work
 
-**AICo2**  
+**Mālama Labs**  
 Digital MRV systems for climate-aligned infrastructure.
 
 **AI Carbon Outlook 2026**  
@@ -235,4 +254,4 @@ MIT License
 
 ## Disclaimer
 
-CO2AI provides modeled carbon estimates based on transparent assumptions and publicly available efficiency benchmarks. It is not a certified emissions auditing system. Organizations should validate assumptions against their operational context.
+AICo2 provides modeled carbon estimates based on transparent assumptions and publicly available efficiency benchmarks. It is not a certified emissions auditing system. Organizations should validate assumptions against their operational context.
