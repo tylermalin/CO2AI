@@ -10,6 +10,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.v1.router import router as v1_router
 from app.api.proxy.router import router as proxy_router
+from app.api.research.router import router as research_router
 from app.config import get_settings
 from app.db import init_db
 from app.logging_config import configure_logging
@@ -85,6 +86,7 @@ def create_app() -> FastAPI:
 
     app.include_router(v1_router)
     app.include_router(proxy_router)
+    app.include_router(research_router)
     return app
 
 

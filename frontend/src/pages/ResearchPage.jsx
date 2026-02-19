@@ -83,7 +83,16 @@ export default function ResearchPage() {
       </nav>
 
       <main className="max-w-4xl mx-auto px-6 py-12">
-        <ExecutiveSummary />
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8">
+          <ExecutiveSummary />
+          <a
+            href="/api/research/outlook-2026.pdf"
+            download="AI_Carbon_Outlook_2026.pdf"
+            className="shrink-0 px-4 py-2 text-sm border border-[var(--color-border)] rounded text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-text-muted)] transition-colors self-start"
+          >
+            Download Policy Brief (PDF)
+          </a>
+        </div>
         <AdoptionContextCharts />
 
         <section className="mb-16">
@@ -142,6 +151,15 @@ export default function ResearchPage() {
         />
 
         <LimitationsSection />
+        <div className="mb-16">
+          <a
+            href="/api/research/outlook-2026.pdf"
+            download="AI_Carbon_Outlook_2026.pdf"
+            className="inline-block px-4 py-2 text-sm border border-[var(--color-border)] rounded text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-text-muted)] transition-colors"
+          >
+            Download Policy Brief (PDF)
+          </a>
+        </div>
         <ReferencesSection />
       </main>
     </div>
