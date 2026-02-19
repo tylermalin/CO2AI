@@ -18,6 +18,9 @@ async def log_emission(
     input_tokens: int,
     output_tokens: int,
     carbon_kg_co2eq: float,
+    routing_region: str | None = None,
+    routing_mode: str | None = None,
+    routing_reason: str | None = None,
 ) -> EmissionRecord:
     """Persist a single emission record."""
     record = EmissionRecord(
@@ -26,6 +29,9 @@ async def log_emission(
         input_tokens=input_tokens,
         output_tokens=output_tokens,
         carbon_kg_co2eq=Decimal(str(carbon_kg_co2eq)),
+        routing_region=routing_region,
+        routing_mode=routing_mode,
+        routing_reason=routing_reason,
     )
     db.add(record)
     await db.flush()
@@ -113,6 +119,9 @@ async def last_n_requests(
             "input_tokens": r.input_tokens,
             "output_tokens": r.output_tokens,
             "carbon_kg_co2eq": float(r.carbon_kg_co2eq),
+            "routing_region": r.routing_region,
+            "routing_mode": r.routing_mode,
+            "routing_reason": r.routing_reason,
             "created_at": r.created_at.isoformat() if r.created_at else None,
         }
         for r in records

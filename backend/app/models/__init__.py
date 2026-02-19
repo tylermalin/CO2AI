@@ -8,6 +8,7 @@ from app.models.request_log import RequestLog
 from app.models.carbon_intensity_cache import CarbonIntensityCache
 from app.models.api_key import ApiKey
 from app.models.emission_record import EmissionRecord
+from app.models.carbon_budget import CarbonBudget
 
 __all__ = [
     "Base",
@@ -19,4 +20,5 @@ __all__ = [
     "CarbonIntensityCache",
     "ApiKey",
     "EmissionRecord",
+    "CarbonBudget",
 ]

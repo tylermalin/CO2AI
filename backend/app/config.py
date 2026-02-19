@@ -1,7 +1,27 @@
 """Environment-based configuration."""
 
+import json
 from functools import lru_cache
+from typing import Any
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def _parse_upstream_regions(v: str | None) -> list[dict[str, str]]:
+    """Parse UPSTREAM_REGIONS JSON. Returns list of {zone, base_url}."""
+    if not v or not v.strip():
+        return []
+    try:
+        data = json.loads(v)
+        if not isinstance(data, list):
+            return []
+        return [
+            {"zone": str(r.get("zone", "")), "base_url": str(r.get("base_url", "")).rstrip("/")}
+            for r in data
+            if r.get("zone") and r.get("base_url")
+        ]
+    except (json.JSONDecodeError, TypeError):
+        return []
 
 
 class Settings(BaseSettings):
@@ -31,10 +51,27 @@ class Settings(BaseSettings):
     openai_api_key: str | None = None
     openai_base_url: str = "https://api.openai.com/v1"
 
+    # Multi-region upstream: JSON list of {"zone":"US-CAL-CISO","base_url":"https://api.openai.com/v1"}
+    # Default: single region from openai_base_url + electricitymap_default_zone
+    upstream_regions: str | None = None
+
     # Carbon estimation (no hardcoded hardware - from env)
     hardware_efficiency_flops_per_joule: float = 1.0e11  # e.g. H100
-    carbon_intensity_g_per_kwh: float = 400.0  # e.g. US average
+    carbon_intensity_g_per_kwh: float = 400.0  # e.g. US average (fallback)
     default_model_params: int = 70_000_000_000  # fallback for unknown models
+    electricitymap_default_zone: str = "US-CAL-CISO"  # zone when not specified
+
+    def get_regions(self) -> list[dict[str, str]]:
+        """Parsed upstream regions. Default: single region from openai_base_url."""
+        parsed = _parse_upstream_regions(self.upstream_regions)
+        if parsed:
+            return parsed
+        return [
+            {
+                "zone": self.electricitymap_default_zone,
+                "base_url": self.openai_base_url.rstrip("/"),
+            }
+        ]
 
 
 @lru_cache

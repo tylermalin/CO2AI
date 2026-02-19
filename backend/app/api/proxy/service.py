@@ -10,7 +10,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import get_settings
 from app.estimation import estimate_carbon
 from app.api.proxy.models import get_active_params
+from app.services.carbon_budget import check_budget
 from app.services.emission_ledger import log_emission
+from app.services import get_carbon_intensity_provider
 
 
 async def forward_chat_completion(
@@ -18,6 +20,9 @@ async def forward_chat_completion(
     stream: bool = False,
     db: AsyncSession | None = None,
     organization_id: uuid.UUID | None = None,
+    region: str | None = None,
+    routing_mode: str = "standard",
+    carbon_intensity_provider=None,
 ) -> dict | StreamingResponse:
     """Forward to OpenAI, extract usage, add carbon_estimate. Async."""
     settings = get_settings()
@@ -30,7 +35,17 @@ async def forward_chat_completion(
     if stream:
         return await _stream_placeholder(body)
 
-    url = f"{settings.openai_base_url.rstrip('/')}/chat/completions"
+    provider = carbon_intensity_provider or get_carbon_intensity_provider()
+    from app.services.carbon_router import select_region
+
+    decision = await select_region(
+        body=body,
+        mode=routing_mode,
+        explicit_region=region,
+        carbon_intensity_provider=provider,
+    )
+
+    url = f"{decision.base_url.rstrip('/')}/chat/completions"
     headers = {
         "Authorization": f"Bearer {settings.openai_api_key}",
         "Content-Type": "application/json",
@@ -43,10 +58,38 @@ async def forward_chat_completion(
         _raise_upstream_error(response)
 
     data = response.json()
-    carbon_estimate = _compute_carbon(data, body.get("model"))
+    carbon_estimate = await _compute_carbon(
+        data, body.get("model"), provider, decision.zone
+    )
     data["carbon_estimate_kg_co2eq"] = round(carbon_estimate, 10)
 
-    # Persist emission record for ledger
+    # Routing metadata
+    data["routing"] = {
+        "region": decision.zone,
+        "mode": decision.mode,
+        "reason": decision.reason,
+    }
+    if decision.region_estimates:
+        data["routing"]["region_estimates"] = decision.region_estimates
+
+    # Budget check before commit (org-level)
+    if db is not None and organization_id is not None:
+        budget_result = await check_budget(db, organization_id, carbon_estimate)
+        if budget_result is not None and not budget_result.allowed:
+            raise HTTPException(
+                status_code=402,
+                detail={
+                    "code": "carbon_budget_exceeded",
+                    "message": "Monthly carbon budget exceeded",
+                    "current_kg_co2eq": budget_result.current_kg,
+                    "projected_kg_co2eq": budget_result.projected_kg,
+                    "limit_kg_co2eq": budget_result.limit_kg,
+                },
+            )
+        if budget_result is not None and budget_result.warning:
+            data["carbon_budget_warning"] = budget_result.warning
+
+    # Persist emission record for ledger (with routing decision)
     if db is not None:
         usage = data.get("usage") or {}
         await log_emission(
@@ -56,6 +99,9 @@ async def forward_chat_completion(
             input_tokens=usage.get("prompt_tokens", 0),
             output_tokens=usage.get("completion_tokens", 0),
             carbon_kg_co2eq=carbon_estimate,
+            routing_region=decision.zone,
+            routing_mode=decision.mode,
+            routing_reason=decision.reason,
         )
 
     return data
@@ -69,8 +115,13 @@ def _raise_upstream_error(response: httpx.Response) -> None:
     )
 
 
-def _compute_carbon(response_data: dict, model: str | None) -> float:
-    """Extract usage from response, run estimator, return kg CO2eq."""
+async def _compute_carbon(
+    response_data: dict,
+    model: str | None,
+    carbon_intensity_provider,
+    zone: str,
+) -> float:
+    """Extract usage from response, run estimator with injectable carbon intensity."""
     usage = response_data.get("usage")
     if not usage:
         return 0.0
@@ -86,11 +137,15 @@ def _compute_carbon(response_data: dict, model: str | None) -> float:
         model or "gpt-4",
         settings.default_model_params,
     )
+    try:
+        carbon_intensity = await carbon_intensity_provider.get_carbon_intensity_g_per_kwh(zone)
+    except Exception:
+        carbon_intensity = settings.carbon_intensity_g_per_kwh
     return estimate_carbon(
         active_params=active_params,
         token_count=total_tokens,
         hardware_efficiency=settings.hardware_efficiency_flops_per_joule,
-        carbon_intensity_g_per_kwh=settings.carbon_intensity_g_per_kwh,
+        carbon_intensity_g_per_kwh=carbon_intensity,
     )
 
 

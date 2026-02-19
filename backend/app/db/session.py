@@ -47,7 +47,17 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 async def init_db() -> None:
     """Initialize database (create tables if needed). Called at startup."""
+    from sqlalchemy import text
+
     from app import models  # noqa: F401 - register all models with Base.metadata
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        # Migration: add routing columns to emission_records if missing
+        for col in ("routing_region", "routing_mode", "routing_reason"):
+            await conn.execute(
+                text(
+                    f"ALTER TABLE emission_records "
+                    f"ADD COLUMN IF NOT EXISTS {col} VARCHAR(255)"
+                )
+            )

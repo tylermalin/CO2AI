@@ -25,6 +25,9 @@ class EmissionRecord(Base):
     input_tokens: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     output_tokens: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     carbon_kg_co2eq: Mapped[Decimal] = mapped_column(Numeric(20, 10), nullable=False)
+    routing_region: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    routing_mode: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    routing_reason: Mapped[str | None] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
